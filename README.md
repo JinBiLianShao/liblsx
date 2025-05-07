@@ -1,0 +1,96 @@
+# LIBLSX - 轻量级C++跨平台工具库
+
+[![GitHub License](https://img.shields.io/github/license/JinBiLianShao/liblsx)](LICENSE)
+![C++11](https://img.shields.io/badge/C++-11-blue.svg)
+
+LIBLSX 是一个轻量级、跨平台的C++工具库，旨在提供高效易用的基础组件或模块。当前已实现**线程管理**与**数据通信**两大核心模块，其他功能模块持续开发中。
+
+---
+
+## 功能特性
+
+### 1. Thread 模块
+- **线程生命周期管理**：通过 `ThreadWrapper` 实现线程的启动、停止、暂停、恢复、重启。
+- **灵活任务绑定**：支持 Lambda、自由函数、成员函数、函数对象等多种任务类型。
+- **任务调度器**：`Scheduler` 支持一次性延迟任务和周期性任务调度。
+- **跨平台兼容**：基于 C++11 标准线程库，适配 Windows/Linux/macOS。
+
+### 2. DataTransfer 模块
+- **统一通信接口**：通过 `ICommunication` 抽象 UDP/TCP/串口等通信协议。
+- **多协议支持**：
+  - **网络协议**：UDP（客户端/服务器/广播/多播）、TCP（客户端/服务器）。
+  - **串口通信**：跨平台串口读写，支持超时配置。
+- **线程安全设计**：内置锁机制保障多线程安全，RAII 管理资源。
+- **工厂模式创建实例**：通过 `CommunicationFactory` 快速创建各类通信实例。
+
+---
+
+## 快速开始
+
+### 前置条件
+- C++11 或更高版本的编译器。
+- 将 LIBLSX 库导入项目。
+
+### 代码示例
+
+#### 线程任务调度
+```cpp
+#include "LSX_LIB/Thread/ThreadWrapper.h"
+#include "LSX_LIB/Thread/Scheduler.h"
+
+using namespace LSX_LIB::Thread;
+
+// 创建线程并绑定 Lambda 任务
+ThreadWrapper thread;
+thread.setTask([]() {
+    std::cout << "Hello from thread!" << std::endl;
+});
+thread.start();
+thread.stop();
+
+// 调度周期性任务
+Scheduler scheduler;
+scheduler.schedulePeriodic(1000, []() {
+    std::cout << "Tick every 1s" << std::endl;
+});
+std::this_thread::sleep_for(std::chrono::seconds(3));
+scheduler.shutdown();
+```
+
+#### 网络通信
+```cpp
+#include "LSX_LIB/DataTransfer/CommunicationFactory.h"
+
+using namespace LSX_LIB;
+
+// 创建 TCP 客户端
+auto tcp = CommunicationFactory::create(CommType::TCP_CLIENT, "127.0.0.1", 8080);
+if (tcp && tcp->create()) {
+    std::vector<uint8_t> data = {0x01, 0x02, 0x03};
+    tcp->send(data.data(), data.size());
+    tcp->close();
+}
+```
+
+---
+
+## 模块文档
+
+| 模块          | 功能说明                              | 详细文档链接                                     |
+|---------------|---------------------------------------|------------------------------------------------|
+| **Thread**    | 线程管理与任务调度                    | [Thread 模块文档](./docs/LIBLSX_Thread_Module.md) |
+| **DataTransfer** | 网络与串口通信                      | [DataTransfer 模块文档](./docs/LIBLSX_DataTransfer_Module.md) |
+
+---
+
+## 项目状态与贡献
+
+- **当前版本**：v0.1.0（开发中）
+- **待开发模块**：日志系统、配置解析、异步任务队列等。
+- **欢迎贡献**：欢迎提交 Issue 或 PR，共同完善功能模块。请遵循项目的代码规范与协议。
+
+---
+
+## 许可证
+
+本项目采用 **MIT 许可证**。详情请参阅 [LICENSE](LICENSE) 文件。
