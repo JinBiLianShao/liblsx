@@ -42,8 +42,8 @@ file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/*.cpp" "${CMAKE_SOURCE_DIR}/*.c" 
 # 手动排除构建目录中的生成文件
 list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_BINARY_DIR}")
 add_library(${PROJECT_NAME}
-        #STATIC
-        SHARED
+        STATIC
+        #SHARED
         ${SOURCES})
 #add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -66,4 +66,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 
 # 链接pthread库
 target_link_libraries(${PROJECT_NAME} pthread rt)
-#target_link_libraries(${PROJECT_NAME} pthread ws2_32)
+#target_link_libraries(${PROJECT_NAME} pthread ws2_32) #Windows下打开
