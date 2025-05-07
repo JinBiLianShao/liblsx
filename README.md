@@ -3,7 +3,7 @@
 [![GitHub License](https://img.shields.io/github/license/JinBiLianShao/liblsx)](LICENSE)
 ![C++11](https://img.shields.io/badge/C++-11-blue.svg)
 
-LIBLSX 是一个轻量级、跨平台的C++工具库，旨在提供高效易用的基础组件或模块。当前已实现**线程管理**与**数据通信**两大核心模块，其他功能模块持续开发中。
+LIBLSX 是一个轻量级、跨平台的C++工具库，旨在提供一个高效且易用的基础组件（模块）库。当前已实现**线程管理**与**数据通信**两大核心模块，其他功能模块持续开发中。
 
 ---
 
