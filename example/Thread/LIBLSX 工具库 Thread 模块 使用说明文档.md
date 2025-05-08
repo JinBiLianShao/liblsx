@@ -435,5 +435,3 @@ int main() {
 * **Scheduler 任务清理：** 对于 `scheduleOnce` 创建的分离任务，尽管 `ThreadWrapper` 对象在任务完成后会自动销毁（如果没有其他 `shared_ptr` 引用），但 `Scheduler` 内部 `tasks_` 列表中的 `shared_ptr` 需要显式移除。目前的 `shutdown()` 会清空列表，但在长时间运行且频繁调用 `scheduleOnce` 的应用中，考虑定期清理列表中已停止 (`ThreadState::STOPPED`) 的分离任务，以防止列表无限增长。周期性任务由于默认是 joinable 并在 `shutdown` 时被 join 和清理，通常问题不大。
 
 ---
-
-通过本教程，您应该能够更灵活地使用 LSX_LIB::Thread 库来管理线程和调度任务，包括将不同类型的函数和方法作为任务在独立的线程中执行。
