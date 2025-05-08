@@ -99,7 +99,7 @@ std::vector<uint8_t> received = byte_pipe.Read(5);
 | 模块          | 功能说明                              | 详细文档链接                                                                       |
 |---------------|---------------------------------------|------------------------------------------------------------------------------|
 | **Thread**    | 线程管理与任务调度                    | [Thread 模块文档](./example/Thread/Thread模块使用说明文档.md)                            |
-| **DataTransfer** | 网络与串口通信                      | [DataTransfer 模块文档](./example/DataTransfer/LIBLSX工具库DataTransfer模块使用说明文档.md) |
+| **DataTransfer** | 网络与串口通信                      | [DataTransfer 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FDataTransfer%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20DataTransfer%20%E6%A8%A1%E5%9D%97%20%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%96%87%E6%A1%A3.md) |
 | **Memory**    | 内存管理与数据结构                    | [Memory 模块文档](./example/MemoryManagement/LIBLSX工具库Memory模块使用说明.md)                           |
 
 ## 项目状态与贡献
