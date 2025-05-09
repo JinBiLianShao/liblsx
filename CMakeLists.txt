@@ -42,8 +42,8 @@ file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/*.cpp" "${CMAKE_SOURCE_DIR}/*.c" 
 # 手动排除构建目录中的生成文件
 list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_BINARY_DIR}")
 add_library(${PROJECT_NAME}
-        STATIC
-        #SHARED
+        STATIC  #静态库
+        #SHARED #动态库
         ${SOURCES})
 #add_executable(${PROJECT_NAME} ${SOURCES})
 
