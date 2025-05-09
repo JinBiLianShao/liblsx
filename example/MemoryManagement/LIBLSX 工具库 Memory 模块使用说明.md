@@ -1,4 +1,4 @@
-# LSX 内存管理工具库 (`LIB_LSX::Memory`) 使用说明
+# LIBLSX 工具库 Memory 模块使用说明
 
 ## 概述
 

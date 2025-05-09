@@ -112,7 +112,7 @@
 
 #ifndef LIB_LSX_MEMORY_PIPE_H
 #define LIB_LSX_MEMORY_PIPE_H
-
+#pragma once
 #include <deque> // For std::deque
 #include <cstdint> // For uint8_t
 #include <vector> // For std::vector

@@ -54,7 +54,7 @@
 
 #ifndef LIB_LSX_MEMORY_LSX_MEMORY_H
 #define LIB_LSX_MEMORY_LSX_MEMORY_H
-
+#pragma once
 // 主头文件，包含所有内存模块的头文件
 
 #include "Buffer.h" // 通用内存缓冲区

@@ -100,208 +100,86 @@
 
 #ifndef LIB_LSX_MEMORY_BUFFER_H
 #define LIB_LSX_MEMORY_BUFFER_H
+#pragma once
 
-#include <vector> // For std::vector
+#include <vector>
 #include <cstdint> // For uint8_t
-#include <stdexcept> // For exceptions like bad_alloc, out_of_range
-#include <mutex>    // For thread safety (std::mutex, std::lock_guard)
-#include <algorithm> // For std::min, std::fill
-// #include <iostream> // For example output - prefer logging
+#include <string>
+#include <mutex> // Still needed for std::mutex definition
+#include <stdexcept> // For exceptions
 
-/**
- * @brief LSX 库的根命名空间。
- */
+// 引入我们自定义的锁管理模块
+#include <cstring>
+
+#include "LockGuard.h" // 用于 LIBLSX::LockManager::LockGuard
+
 namespace LIB_LSX {
-    /**
-     * @brief 内存管理相关的命名空间。
-     * 包含内存缓冲区和相关工具。
-     */
-    namespace Memory {
+namespace Memory {
 
-        /**
-         * @brief 通用内存缓冲区类。
-         * 基于 std::vector<uint8_t> 实现的动态大小内存缓冲区。
-         * 提供缓冲区管理、数据读写和线程安全访问功能。
-         */
-        // 6. Buffer Module (缓冲区模块)
-        // 用于实现通用的内存缓冲区 (非模板类, 存储字节)
-        // 接口优化：增加Clear, Fill, WriteAt/ReadAt
-        // 线程安全：使用 std::mutex
-        class Buffer {
-        private:
-            /**
-             * @brief 存储缓冲区数据的底层 vector。
-             * 包含实际的字节数据。
-             */
-            std::vector<uint8_t> data_vector_;
-            /**
-             * @brief 互斥锁。
-             * 用于保护 data_vector_ 的并发访问，确保线程安全。
-             */
-            mutable std::mutex mutex_; // Thread safety mutex
+class Buffer {
+public:
+    // 构造函数和析构函数
+    explicit Buffer(size_t initial_size = 0);
+    Buffer(const uint8_t* data, size_t size);
+    Buffer(const Buffer& other); // 拷贝构造函数
+    Buffer(Buffer&& other) noexcept; // 移动构造函数
+    Buffer& operator=(const Buffer& other); // 拷贝赋值运算符
+    Buffer& operator=(Buffer&& other) noexcept; // 移动赋值运算符
+    ~Buffer();
 
-        public:
-            // Constructor/Destructor
-            /**
-             * @brief 默认构造函数。
-             * 创建一个空的缓冲区。
-             */
-            Buffer(); // Empty buffer
-            /**
-             * @brief 构造函数。
-             * 创建一个指定初始大小的缓冲区，内容未初始化。
-             *
-             * @param size 缓冲区的初始大小（字节）。
-             */
-            Buffer(size_t size); // Buffer with initial size
-            /**
-             * @brief 析构函数。
-             * 默认析构函数，由 std::vector 自动管理内存释放。
-             */
-            ~Buffer() = default; // std::vector handles deallocation
+    // 数据访问
+    // 警告: 返回原始指针意味着调用者需要自行确保线程安全
+    // 如果在 Buffer 的加锁方法外部进行直接访问，请务必小心。
+    uint8_t* Data();
+    const uint8_t* Data() const;
+    size_t Size() const;
 
-            // Copy and assignment are fine for Buffer (vector handles deep copy)
-            /**
-             * @brief 拷贝构造函数。
-             * 创建一个 Buffer 的拷贝，包含源缓冲区数据的深拷贝。
-             */
-            Buffer(const Buffer&) = default;
-            /**
-             * @brief 拷贝赋值运算符。
-             * 将源 Buffer 的内容深拷贝到当前缓冲区。
-             *
-             * @param other 源 Buffer 对象。
-             * @return 对当前 Buffer 对象的引用。
-             */
-            Buffer& operator=(const Buffer&) = default;
-            /**
-             * @brief 移动构造函数。
-             * 从源 Buffer 移动资源到当前缓冲区。
-             *
-             * @param other 源 Buffer 对象。
-             */
-            Buffer(Buffer&&) = default;
-            /**
-             * @brief 移动赋值运算符。
-             * 从源 Buffer 移动资源到当前缓冲区。
-             *
-             * @param other 源 Buffer 对象。
-             * @return 对当前 Buffer 对象的引用。
-             */
-            Buffer& operator=(Buffer&&) = default;
+    // 操作 - 所有这些方法都将在内部处理锁管理
+    bool WriteAt(size_t offset, const uint8_t* data, size_t size);
+    bool ReadAt(size_t offset, uint8_t* data, size_t size) const;
+    bool Resize(size_t new_size);
+    void Clear();
+    void Fill(uint8_t value);
 
+    // 便利方法 - 这些模板方法也将在内部处理锁管理
+    template<typename T>
+    bool Write(size_t offset, const T& value);
 
-            // --- Management Functions ---
-            /**
-             * @brief 调整缓冲区的大小。
-             * 改变缓冲区的当前大小。如果新大小小于当前大小，多余的数据会被截断。
-             * 如果新大小大于当前大小，新分配的部分内容未定义。
-             *
-             * @param new_size 缓冲区的新大小（字节）。
-             * @return 如果成功调整大小，返回 true；如果分配内存失败，返回 false（或抛出 std::bad_alloc）。
-             */
-            bool Resize(size_t new_size);
+    template<typename T>
+    bool Read(size_t offset, T& value) const;
 
-            /**
-             * @brief 清空缓冲区。
-             * 将缓冲区的大小调整为 0。
-             */
-            void Clear();
+    // 获取字符串表示 (用于调试/显示)
+    std::string ToString() const;
 
-            /**
-             * @brief 填充缓冲区。
-             * 使用指定的字节值填充整个缓冲区。
-             *
-             * @param value 用于填充的字节值。
-             */
-            void Fill(uint8_t value);
+private:
+    std::vector<uint8_t> buffer_;
+    mutable std::mutex mutex_; // 用于线程安全，mutable 允许 const 方法加锁
+};
 
+// 模板方法的实现 (必须在头文件中，除非显式实例化)
+// 这些方法内部使用 LIBLSX::LockManager::LockGuard 进行保护。
+template<typename T>
+bool Buffer::Write(size_t offset, const T& value) {
+    // 使用我们自定义的 LockGuard 进行 RAII 保护
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    if (offset + sizeof(T) > buffer_.size()) {
+        return false;
+    }
+    std::memcpy(buffer_.data() + offset, &value, sizeof(T));
+    return true;
+}
 
-            // --- Data Access Functions ---
-            /**
-             * @brief 获取指向底层数据的指针。
-             * 返回指向缓冲区第一个字节的指针。
-             * **注意：** 获取指针后，用户需要自行保证对数据的访问是线程安全的，特别是在多线程环境中。
-             *
-             * @return 指向缓冲区数据的指针。如果缓冲区为空，返回 nullptr。
-             */
-            uint8_t* GetData();
-            /**
-             * @brief 获取指向底层数据的常量指针。
-             * 返回指向缓冲区第一个字节的常量指针。用于只读访问。
-             *
-             * @return 指向缓冲区数据的常量指针。如果缓冲区为空，返回 nullptr。
-             */
-            const uint8_t* GetData() const;
+template<typename T>
+bool Buffer::Read(size_t offset, T& value) const {
+    // 使用我们自定义的 LockGuard 进行 RAII 保护
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    if (offset + sizeof(T) > buffer_.size()) {
+        return false;
+    }
+    std::memcpy(&value, buffer_.data() + offset, sizeof(T));
+    return true;
+}
 
-            /**
-             * @brief 在指定偏移量写入数据。
-             * 将指定数据从给定的偏移量开始写入缓冲区。
-             *
-             * @param offset 写入的起始偏移量（从 0 开始）。
-             * @param data 指向要写入数据的缓冲区。
-             * @param size 要写入数据的字节数。
-             * @return 实际写入的字节数。如果 offset 或 offset + size 超出缓冲区范围，返回 0。
-             */
-            size_t WriteAt(size_t offset, const uint8_t* data, size_t size);
-            /**
-             * @brief 在指定偏移量写入数据。
-             * 将 std::vector 中的数据从给定的偏移量开始写入缓冲区。
-             *
-             * @param offset 写入的起始偏移量（从 0 开始）。
-             * @param data 包含要写入数据的 std::vector。
-             * @return 实际写入的字节数。如果 offset 或 offset + data.size() 超出缓冲区范围，返回 0。
-             */
-            size_t WriteAt(size_t offset, const std::vector<uint8_t>& data);
-
-
-            /**
-             * @brief 在指定偏移量读取数据。
-             * 从缓冲区中指定偏移量开始读取数据到给定的缓冲区。
-             *
-             * @param offset 读取的起始偏移量（从 0 开始）。
-             * @param buffer 指向用于存储读取数据的缓冲区。
-             * @param size 要读取的最大字节数。
-             * @return 实际读取的字节数。如果 offset 或 offset + size 超出缓冲区范围，返回 0。
-             */
-            size_t ReadAt(size_t offset, uint8_t* buffer, size_t size) const;
-            /**
-             * @brief 在指定偏移量读取数据。
-             * 从缓冲区中指定偏移量开始读取指定数量的数据，并返回一个新的 std::vector。
-             *
-             * @param offset 读取的起始偏移量（从 0 开始）。
-             * @param size 要读取的字节数。
-             * @return 包含读取数据的 std::vector。如果 offset 或 offset + size 超出缓冲区范围，返回一个空的 vector。
-             */
-            std::vector<uint8_t> ReadAt(size_t offset, size_t size) const;
-
-
-            // --- Status Functions ---
-            /**
-             * @brief 获取缓冲区的当前大小。
-             *
-             * @return 缓冲区的当前大小（字节）。
-             */
-            size_t GetSize() const;
-
-            /**
-             * @brief 检查缓冲区是否为空。
-             *
-             * @return 如果缓冲区大小为 0，返回 true；否则返回 false。
-             */
-            bool IsEmpty() const;
-
-            /**
-             * @brief 获取缓冲区的容量。
-             * 对于 std::vector，容量是实际分配的内存大小，可能大于当前 size。
-             * (注意：此实现基于 std::vector，Capacity 通常与 size 相同，除非 vector 预留了空间或增长策略不同)。
-             *
-             * @return 缓冲区的容量（字节）。
-             */
-            size_t Capacity() const;
-        };
-
-    } // namespace Memory
+} // namespace Memory
 } // namespace LIB_LSX
-
 #endif // LIB_LSX_MEMORY_BUFFER_H

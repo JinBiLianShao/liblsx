@@ -103,7 +103,7 @@
 
 #ifndef LIB_LSX_MEMORY_QUEUE_H
 #define LIB_LSX_MEMORY_QUEUE_H
-
+#pragma once
 #include <deque> // For std::deque
 #include <optional> // For std::optional (C++17)
 #include <stdexcept> // For exceptions (std::out_of_range)

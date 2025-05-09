@@ -103,7 +103,7 @@
 
 #ifndef LIB_LSX_MEMORY_FIFO_H
 #define LIB_LSX_MEMORY_FIFO_H
-
+#pragma once
 #include <queue> // For std::queue
 #include <optional> // For std::optional (C++17)
 #include <stdexcept> // For exceptions (std::out_of_range)

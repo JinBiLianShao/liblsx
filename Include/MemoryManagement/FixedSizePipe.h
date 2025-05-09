@@ -111,7 +111,7 @@
 
 #ifndef LIB_LSX_MEMORY_FIXED_SIZE_PIPE_H
 #define LIB_LSX_MEMORY_FIXED_SIZE_PIPE_H
-
+#pragma once
 #include <vector> // For std::vector
 #include <cstdint> // For uint8_t
 #include <optional> // For std::optional (C++17)
