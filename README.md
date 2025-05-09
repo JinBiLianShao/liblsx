@@ -3,7 +3,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![C++11](https://img.shields.io/badge/C++-11-blue.svg)
 
-LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提供高效且易用的基础组件。当前已开发完成 **线程管理（Thread）**、**数据通信（DataTransfer）** 和 **内存管理（Memory）** 三大核心模块。
+LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提供高效且易用的基础组件。当前已开发完成 **线程管理（Thread）**、**数据通信（DataTransfer）** 和 **内存管理（Memory）** 和 **锁管理（LockManager）** 四大核心模块。
 
 ## 功能特性
 
@@ -27,6 +27,8 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 - **线程安全**：所有组件均支持多线程安全访问。
 - **灵活的数据结构**：支持固定大小块管理和动态内存缓冲区。
 - **跨平台**：适配 Windows 和 POSIX 系统（Linux/macOS）。
+
+### 4. LockManager 模块
 
 ## 快速开始
 

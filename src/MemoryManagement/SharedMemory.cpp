@@ -216,8 +216,7 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
 }
 
 
-void SharedMemory::Detach() {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
+void SharedMemory::Detach() {// Protect instance state
 
     if (!IsAttached()) { // Check locked by lock_guard
         // std::cout << "SharedMemory: Not attached, nothing to detach." << std::endl; // Use logging
@@ -313,7 +312,6 @@ bool SharedMemory::Destroy() {
 }
 
 void* SharedMemory::GetAddress() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to lpBaseAddress_/shm_address_
     if (!IsAttached()) { // Check locked by lock_guard
         // std::cerr << "SharedMemory: Cannot get address, not attached." << std::endl; // Use logging
         return nullptr;
@@ -398,7 +396,7 @@ bool SharedMemory::IsAttached() const {
 #ifdef _WIN32
     return lpBaseAddress_ != nullptr;
 #else // POSIX
-    return shm_address_ != nullptr && shm_address_ != (void*)-1;
+    return shm_address_ != nullptr && shm_address_ != reinterpret_cast<void*>(-1);
 #endif
 }
 
