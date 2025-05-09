@@ -1,7 +1,7 @@
 # LIBLSX - 轻量级 C++ 跨平台工具库
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-![C++11](https://img.shields.io/badge/C++-11-blue.svg)
+![C++17](https://img.shields.io/badge/C++-17-blue.svg)
 
 LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提供高效且易用的基础组件。当前已开发完成 **线程管理（Thread）**、**数据通信（DataTransfer）** 和 **内存管理（Memory）** 和 **锁管理（LockManager）** 四大核心模块。
 
@@ -29,21 +29,26 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 - **跨平台**：适配 Windows 和 POSIX 系统（Linux/macOS）。
 
 ### 4. LockManager 模块
+- **RAII 原则封装**：基于 RAII (Resource Acquisition Is Initialization) 机制，自动管理互斥量的加锁与解锁，确保资源在作用域结束或异常抛出时被正确释放，极大提升并发代码的**安全性、可读性、健壮性和可维护性**。
+- **多种锁类型支持**：全面支持 C++ 标准库提供的各类互斥量，包括 `std::mutex` (独占)、`std::recursive_mutex` (递归)、`std::timed_mutex` (定时独占)、`std::shared_mutex` (读写锁) 和 `std::shared_timed_mutex` (定时读写锁)。
+- **死锁自动避免**：`MultiLockGuard` 类利用 C++17 的 `std::scoped_lock`，在单个原子操作中同时获取多个互斥量，内置死锁避免算法，从根本上解决多锁场景下的死锁问题。
+- **条件变量支持**：`Condition` 类封装 `std::condition_variable_any`，提供强大的线程间协作和同步机制，并通过强制使用谓词 (predicate) 有效避免“虚假唤醒”。
+- **C++17 标准兼容**：充分利用 `if constexpr`、`std::scoped_lock`、`std::is_same_v` 等 C++17 特性，提供更高效、更简洁的实现。
 
 ## 快速开始
 
 ### 前置条件
-- C++11 或更高版本的编译器。
+- C++17 或更高版本的编译器。
 - 将 LIBLSX 库导入项目。
 
 ### 代码示例
 
 #### 线程任务调度
 ```cpp
-#include "LSX_LIB/Thread/ThreadWrapper.h"
-#include "LSX_LIB/Thread/Scheduler.h"
+#include "LIBLSX/Thread/ThreadWrapper.h"
+#include "LIBLSX/Thread/Scheduler.h"
 
-using namespace LSX_LIB::Thread;
+using namespace LIBLSX::Thread;
 
 // 创建线程并绑定 Lambda 任务
 ThreadWrapper thread;
@@ -60,13 +65,14 @@ scheduler.schedulePeriodic(1000, []() {
 });
 std::this_thread::sleep_for(std::chrono::seconds(3));
 scheduler.shutdown();
-```
+````
 
 #### 网络通信
-```cpp
-#include "LSX_LIB/DataTransfer/CommunicationFactory.h"
 
-using namespace LSX_LIB;
+```cpp
+#include "LIBLSX/DataTransfer/CommunicationFactory.h"
+
+using namespace LIBLSX;
 
 // 创建 TCP 客户端
 auto tcp = CommunicationFactory::create(CommType::TCP_CLIENT, "127.0.0.1", 8080);
@@ -78,11 +84,12 @@ if (tcp && tcp->create()) {
 ```
 
 #### 内存管理
-```cpp
-#include "LSX_LIB/Memory/FIFO.h"
-#include "LSX_LIB/Memory/Pipe.h"
 
-using namespace LSX_LIB::Memory;
+```cpp
+#include "LIBLSX/Memory/FIFO.h"
+#include "LIBLSX/Memory/Pipe.h"
+
+using namespace LIBLSX::Memory;
 
 // 使用 FIFO 队列
 FIFO<std::string> string_fifo;
@@ -96,13 +103,48 @@ byte_pipe.Write(send);
 std::vector<uint8_t> received = byte_pipe.Read(5);
 ```
 
+#### 锁管理 (LockManager)
+
+```cpp
+#include "LIBLSX/LockManager/MultiLockGuard.h"
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <chrono> // For std::chrono::milliseconds
+
+using namespace LIBLSX::LockManager;
+
+std::mutex account_m1, account_m2;
+int account_balance1 = 100, account_balance2 = 200;
+
+void transfer_funds(int amount, int& from_balance, int& to_balance, std::mutex& m_from, std::mutex& m_to) {
+    std::cout << "Attempting transfer of " << amount << "..." << std::endl;
+    // MultiLockGuard 原子性地获取两个互斥量，自动处理死锁
+    MultiLockGuard<std::mutex, std::mutex> lock_pair(m_from, m_to);
+
+    if (from_balance >= amount) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); // 模拟处理时间
+        from_balance -= amount;
+        to_balance += amount;
+        std::cout << "Transfer successful. Bal1=" << from_balance << ", Bal2=" << to_balance << std::endl;
+    } else {
+        std::cout << "Transfer failed: Insufficient funds." << std::endl;
+    }
+}
+// Example usage (within main or another function):
+// std::thread t1(transfer_funds, 30, std::ref(account_balance1), std::ref(account_balance2), std::ref(account_m1), std::ref(account_m2));
+// std::thread t2(transfer_funds, 80, std::ref(account_balance2), std::ref(account_balance1), std::ref(account_m2), std::ref(account_m1)); // 演示颠倒顺序仍安全
+// t1.join(); t2.join();
+```
+
 ## 模块文档
 
 | 模块          | 功能说明                              | 详细文档链接                                                                       |
 |---------------|---------------------------------------|------------------------------------------------------------------------------|
-| **Thread**    | 线程管理与任务调度                    | [Thread 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FThread%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Thread%20%E6%A8%A1%E5%9D%97%20%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%96%87%E6%A1%A3.md)                            |
+| **Thread** | 线程管理与任务调度                    | [Thread 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FThread%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Thread%20%E6%A8%A1%E5%9D%97%20%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%96%87%E6%A1%A3.md) |
 | **DataTransfer** | 网络与串口通信                      | [DataTransfer 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FDataTransfer%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20DataTransfer%20%E6%A8%A1%E5%9D%97%20%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%96%87%E6%A1%A3.md) |
-| **Memory**    | 内存管理与数据结构                    | [Memory 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FMemoryManagement%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Memory%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md)                           |
+| **Memory** | 内存管理与数据结构                    | [Memory 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FMemoryManagement%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Memory%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **LockManager**| RAII 锁管理与并发原语               | [LockManager 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example/LockManager/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20LockManager%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 
 ## 项目状态与贡献
 
