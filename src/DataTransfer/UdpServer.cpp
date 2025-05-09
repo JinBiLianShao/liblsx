@@ -23,7 +23,7 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
   sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sockfd == INVALID_SOCKET) {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "UdpServer::create: socket failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
@@ -31,7 +31,7 @@ namespace LSX_LIB::DataTransfer
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         if (sockfd < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpServer::create: socket failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
@@ -41,10 +41,10 @@ namespace LSX_LIB::DataTransfer
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&opt), sizeof(opt)) < 0)
         {
 #ifdef _WIN32
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "UdpServer::create: setsockopt(SO_REUSEADDR) failed. Error: " << WSAGetLastError() << std::endl;
 #else
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpServer::create: setsockopt(SO_REUSEADDR) failed. Error: " << strerror(errno) << std::endl;
 #endif
             // 不是关键错误，但报告
@@ -55,12 +55,12 @@ namespace LSX_LIB::DataTransfer
                  sizeof(localAddr)) < 0)
         {
 #ifdef _WIN32
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "UdpServer::create: bind failed. Error: " << WSAGetLastError() << std::endl;
     closesocket(sockfd); // 清理套接字
     sockfd = INVALID_SOCKET;
 #else
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpServer::create: bind failed. Error: " << strerror(errno) << std::endl;
             ::close(sockfd); // 清理套接字
             sockfd = -1;
@@ -76,7 +76,7 @@ namespace LSX_LIB::DataTransfer
         // 注意: 这个 send 方法不适用于典型的 UDP 服务器
         // 因为 ICommunication 接口没有提供目标地址。
         // 一个真正的 UDP 服务器需要从 receive 获取接收者地址，并使用 sendto 发送。
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+        LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
         std::cerr << "UdpServer::send: This method is not typically used by a UDP server."
             << " A server needs the recipient address from receive() to use sendto." << std::endl;
         return false;
@@ -93,7 +93,7 @@ namespace LSX_LIB::DataTransfer
 #endif
         )
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpServer::receive: Socket not created or closed." << std::endl;
             return -1; // 指示错误
         }
@@ -105,7 +105,7 @@ namespace LSX_LIB::DataTransfer
         int intSize = static_cast<int>(size);
         if (intSize < 0 || static_cast<size_t>(intSize) != size)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
             std::cerr << "UdpServer::receive: Buffer size too large for recvfrom chunk size." << std::endl;
             return -1;
         }
@@ -120,29 +120,29 @@ namespace LSX_LIB::DataTransfer
     int err = WSAGetLastError();
     // 处理超时/非阻塞情况
     if (err == WSAETIMEDOUT) {
-      // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+      // LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
       // std::cerr << "UdpServer::receive: recvfrom timed out." << std::endl; // 超时可能不是错误
       return 0; // 将超时视为读取 0 字节
     }
     if (err == WSAEWOULDBLOCK) {
-            // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+            // LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
       // std::cerr << "UdpServer::receive: recvfrom would block." << std::endl; // 非阻塞模式下当前无数据
             return 0; // 将无可读数据视为读取 0 字节
         }
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
       std::cerr << "UdpServer::receive: recvfrom failed. Error: " << err << std::endl;
         }
 #else
             // 处理超时/非阻塞情况
             if (errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+                // LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
                 // std::cerr << "UdpServer::receive: recvfrom would block/EAGAIN." << std::endl; // 非阻塞模式下当前无数据
                 return 0; // 将无可读数据视为读取 0 字节
             }
             {
-                LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
                 std::cerr << "UdpServer::receive: recvfrom failed. Error: " << strerror(errno) << std::endl;
             }
 #endif
@@ -200,7 +200,7 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "UdpServer::setSendTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
@@ -210,7 +210,7 @@ namespace LSX_LIB::DataTransfer
         tv.tv_usec = (timeout_ms % 1000) * 1000;
         if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpServer::setSendTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
@@ -232,7 +232,7 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "UdpServer::setReceiveTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
@@ -242,7 +242,7 @@ namespace LSX_LIB::DataTransfer
         tv.tv_usec = (timeout_ms % 1000) * 1000;
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpServer::setReceiveTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }

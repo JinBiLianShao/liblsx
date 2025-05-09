@@ -17,13 +17,13 @@ namespace LSX_LIB::DataTransfer
         // 使用 inet_pton
 #ifdef _WIN32
     if (inet_pton(AF_INET, ip.c_str(), &(serverAddr.sin_addr)) != 1) {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+        LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
         std::cerr << "TcpClient::TcpClient: inet_pton failed for address " << ip << ". Error: " << WSAGetLastError() << std::endl;
     }
 #else
         if (inet_pton(AF_INET, ip.c_str(), &(serverAddr.sin_addr)) != 1)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
             std::cerr << "TcpClient::TcpClient: inet_pton failed for address " << ip << ". Error: " << strerror(errno)
                 << std::endl;
         }
@@ -37,7 +37,7 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
   sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (sockfd == INVALID_SOCKET) {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "TcpClient::create: socket failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
@@ -45,7 +45,7 @@ namespace LSX_LIB::DataTransfer
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "TcpClient::create: socket failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
@@ -56,12 +56,12 @@ namespace LSX_LIB::DataTransfer
                     sizeof(serverAddr)) < 0)
         {
 #ifdef _WIN32
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "TcpClient::create: connect failed. Error: " << WSAGetLastError() << std::endl;
     closesocket(sockfd); // 清理套接字
     sockfd = INVALID_SOCKET;
 #else
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "TcpClient::create: connect failed. Error: " << strerror(errno) << std::endl;
             ::close(sockfd); // 清理套接字
             sockfd = -1;
@@ -81,7 +81,7 @@ namespace LSX_LIB::DataTransfer
 #endif
         )
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "TcpClient::send: Socket not created or closed." << std::endl;
             return false;
         }
@@ -121,12 +121,12 @@ namespace LSX_LIB::DataTransfer
                  continue; // 理论上不应该发生，除非是非阻塞 socket
             }
       if (err == WSAETIMEDOUT) {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+        LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
         std::cerr << "TcpClient::send: Timed out." << std::endl;
         return false; // 发送超时
       }
       {
-                LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
         std::cerr << "TcpClient::send: send failed. Error: " << err << std::endl;
             }
 #else
@@ -138,7 +138,7 @@ namespace LSX_LIB::DataTransfer
                     continue; // 理论上不应该发生
                 }
                 {
-                    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+                    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
                     std::cerr << "TcpClient::send: send failed. Error: " << strerror(errno) << std::endl;
                 }
 #endif
@@ -147,7 +147,7 @@ namespace LSX_LIB::DataTransfer
             if (sent == 0)
             {
                 // 发送时连接被对端关闭 (比接收时少见)
-                LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
                 std::cerr << "TcpClient::send: Connection closed by peer during send." << std::endl;
                 return false;
             }
@@ -167,7 +167,7 @@ namespace LSX_LIB::DataTransfer
 #endif
         )
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "TcpClient::receive: Socket not created or closed." << std::endl;
             return -1; // 指示错误
         }
@@ -180,7 +180,7 @@ namespace LSX_LIB::DataTransfer
         int intSize = static_cast<int>(size);
         if (intSize < 0 || static_cast<size_t>(intSize) != size)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
             std::cerr << "TcpClient::receive: Buffer size too large for recv chunk size." << std::endl;
             return -1;
         }
@@ -195,29 +195,29 @@ namespace LSX_LIB::DataTransfer
     int err = WSAGetLastError();
     // 处理超时/非阻塞错误
     if (err == WSAEWOULDBLOCK) {
-            // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+            // LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
       // std::cerr << "TcpClient::receive: recv would block." << std::endl; // 非阻塞模式下当前无数据
             return 0; // 将无可读数据视为读取 0 字节
         }
     if (err == WSAETIMEDOUT) {
-      // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+      // LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
       // std::cerr << "TcpClient::receive: Timed out." << std::endl; // 超时可能不是错误，取决于使用场景
       return 0; // 将超时视为读取 0 字节
     }
     {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
       std::cerr << "TcpClient::receive: recv failed. Error: " << err << std::endl;
         }
 #else
             // 处理超时/非阻塞错误
             if (errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+                // LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
                 // std::cerr << "TcpClient::receive: recv would block/EAGAIN." << std::endl; // 非阻塞模式下当前无数据
                 return 0; // 将无可读数据视为读取 0 字节
             }
             {
-                LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
                 std::cerr << "TcpClient::receive: recv failed. Error: " << strerror(errno) << std::endl;
             }
 #endif
@@ -274,7 +274,7 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "TcpClient::setSendTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
@@ -284,7 +284,7 @@ namespace LSX_LIB::DataTransfer
         tv.tv_usec = (timeout_ms % 1000) * 1000;
         if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "TcpClient::setSendTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
@@ -306,7 +306,7 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "TcpClient::setReceiveTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
@@ -316,7 +316,7 @@ namespace LSX_LIB::DataTransfer
         tv.tv_usec = (timeout_ms % 1000) * 1000;
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "TcpClient::setReceiveTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }

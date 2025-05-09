@@ -47,10 +47,10 @@ namespace LSX_LIB::DataTransfer
                        reinterpret_cast<const char*>(&opt), sizeof(opt)) < 0)
         {
 #ifdef _WIN32
-                LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
                 std::cerr << "UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << WSAGetLastError() << std::endl;
 #else
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex); // 锁定错误输出
+            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << strerror(errno) <<
                 std::endl;
 #endif
