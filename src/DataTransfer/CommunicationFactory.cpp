@@ -13,8 +13,8 @@
 
 // 包含 WinsockManager 头文件，以确保其静态实例被创建和链接
 #include "WinsockManager.h"
-// 包含全局错误锁头文件
-#include "GlobalErrorMutex.h"
+
+#include <iostream> // For std::cerr and std::endl
 
 
 namespace LSX_LIB::DataTransfer
@@ -50,8 +50,9 @@ namespace LSX_LIB::DataTransfer
             break;
         default:
             {
-                // 使用锁保护全局错误输出
-                std::lock_guard<std::mutex> lock(g_error_mutex);
+                // 使用 LIBLSX::LockManager::LockGuard 保护全局错误输出
+                // LockGuard 构造时锁定 g_error_mutex，离开作用域时自动解锁
+                LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
                 std::cerr << "CommunicationFactory::create: Unsupported CommType." << std::endl;
             }
             break;

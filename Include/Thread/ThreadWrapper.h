@@ -116,6 +116,10 @@
 #ifndef THREADWRAPPER_H
 #define THREADWRAPPER_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 
 #include <thread> // 包含 std::thread
 #include <mutex> // 包含 std::mutex

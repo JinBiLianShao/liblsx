@@ -10,7 +10,9 @@
 #include <condition_variable> // For std::condition_variable
 #include <chrono> // For std::chrono::milliseconds
 #include <iostream> // 保留用于调试，发布时可移除或替换为日志库
-// #include <iostream>  // For example output - prefer logging
+// #include <iostream>
+#include "LockGuard.h"
+#include "MultiLockGuard.h"
 
 
 namespace LIB_LSX {
@@ -58,7 +60,7 @@ FixedSizePipe::FixedSizePipe(size_t block_size, size_t block_count)
 }
 
 void FixedSizePipe::Clear() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     head_ = 0;
     tail_ = 0;
     current_size_ = 0;
@@ -73,7 +75,7 @@ bool FixedSizePipe::Write(const uint8_t* data, size_t data_size) {
         // std::cerr << "FixedSizePipe: Write failed. Invalid data or size mismatch." << std::endl;
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
 
     if (current_size_ == block_count_) { // 直接检查 current_size_，因为已持有锁
         // std::cout << "FixedSizePipe: Pipe is full, cannot Write." << std::endl;
@@ -101,7 +103,7 @@ bool FixedSizePipe::Read(uint8_t* buffer, size_t buffer_size) {
         // std::cerr << "FixedSizePipe: Read failed. Invalid buffer or size too small." << std::endl;
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
 
     if (current_size_ == 0) { // 直接检查 current_size_，因为已持有锁
         // std::cout << "FixedSizePipe: Pipe is empty, cannot Read." << std::endl;
@@ -120,7 +122,7 @@ bool FixedSizePipe::Read(uint8_t* buffer, size_t buffer_size) {
 }
 
 std::optional<std::vector<uint8_t>> FixedSizePipe::Read() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     if (current_size_ == 0) { // 直接检查
         // std::cout << "FixedSizePipe: Pipe is empty, cannot Read (vector)." << std::endl;
         return std::nullopt;
@@ -144,7 +146,7 @@ bool FixedSizePipe::Peek(uint8_t* buffer, size_t buffer_size) const {
         // std::cerr << "FixedSizePipe: Peek failed. Invalid buffer or size too small." << std::endl;
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
 
     if (current_size_ == 0) { // 直接检查
         // std::cout << "FixedSizePipe: Pipe is empty, cannot Peek." << std::endl;
@@ -159,7 +161,7 @@ bool FixedSizePipe::Peek(uint8_t* buffer, size_t buffer_size) const {
 }
 
 std::optional<std::vector<uint8_t>> FixedSizePipe::Peek() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     if (current_size_ == 0) { // 直接检查
         // std::cout << "FixedSizePipe: Pipe is empty, cannot Peek (vector)." << std::endl;
         return std::nullopt;
@@ -306,17 +308,17 @@ bool FixedSizePipe::WriteBlocking(const std::vector<uint8_t>& data, long timeout
 
 // --- Status Functions ---
 bool FixedSizePipe::IsEmpty() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     return current_size_ == 0;
 }
 
 bool FixedSizePipe::IsFull() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     return current_size_ == block_count_;
 }
 
 size_t FixedSizePipe::Size() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     return current_size_;
 }
 

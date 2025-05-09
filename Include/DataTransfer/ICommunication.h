@@ -91,6 +91,10 @@
 #ifndef LSX_I_COMMUNICATION_H
 #define LSX_I_COMMUNICATION_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 #include <cstdint> // 包含 uint8_t
 #include <cstddef> // 包含 size_t
 

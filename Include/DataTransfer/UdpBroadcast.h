@@ -147,6 +147,10 @@
 #ifndef LSX_UDP_BROADCAST_H
 #define LSX_UDP_BROADCAST_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 #include "UdpClient.h" // 继承自 UdpClient，复用其基础功能
 
 /**

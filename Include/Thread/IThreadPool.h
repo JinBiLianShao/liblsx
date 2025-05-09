@@ -99,6 +99,10 @@
 #ifndef ITHREADPOOL_H
 #define ITHREADPOOL_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 
 #include <functional> // 包含 std::function
 #include <memory> // 包含 std::unique_ptr 等智能指针

@@ -113,6 +113,10 @@
 #ifndef ICOMMUNICATOR_H
 #define ICOMMUNICATOR_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 
 #include <functional> // 包含 std::function
 #include <string> // 包含 std::string

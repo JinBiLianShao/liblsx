@@ -76,6 +76,10 @@
 #ifndef LSX_COMMUNICATION_FACTORY_H
 #define LSX_COMMUNICATION_FACTORY_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 #include <memory> // 包含 std::unique_ptr, std::make_unique
 #include <string> // 包含 std::string
 #include "ICommunication.h" // 包含通信接口基类

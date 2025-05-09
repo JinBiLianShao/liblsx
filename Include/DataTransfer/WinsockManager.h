@@ -73,6 +73,10 @@
 #ifndef LSX_WINSOCK_MANAGER_H
 #define LSX_WINSOCK_MANAGER_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 
 // 仅在 Windows 平台下包含 Winsock 头文件和定义 WinsockManager
 #ifdef _WIN32

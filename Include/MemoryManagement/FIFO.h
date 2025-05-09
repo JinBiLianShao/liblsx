@@ -104,6 +104,10 @@
 #ifndef LIB_LSX_MEMORY_FIFO_H
 #define LIB_LSX_MEMORY_FIFO_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 #include <queue> // For std::queue
 #include <optional> // For std::optional (C++17)
 #include <stdexcept> // For exceptions (std::out_of_range)

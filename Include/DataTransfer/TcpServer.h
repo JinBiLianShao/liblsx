@@ -154,6 +154,10 @@
 #ifndef LSX_TCP_SERVER_H
 #define LSX_TCP_SERVER_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 #include "ICommunication.h" // 包含通信接口基类
 
 // 根据平台包含相应的头文件

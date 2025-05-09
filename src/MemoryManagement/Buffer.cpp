@@ -1,175 +1,152 @@
 #include "Buffer.h"
 
-#include <cstring>      // For memcpy
-#include <algorithm>    // For std::min, std::fill
-#include <iostream>     // For debugging output (std::cerr) - 建议在生产环境中使用日志库
-#include <stdexcept>    // For exceptions
-#include <cstdio>       // For snprintf
-
-// 引入我们自定义的锁管理模块
+#include <cstring> // For memcpy
+#include <algorithm> // For std::min, std::fill
+// #include <iostream> // For example output - prefer logging
+#include <iostream>
 #include "LockGuard.h"
-#include "MultiLockGuard.h" // 用于 Buffer::operator= (拷贝赋值)
+#include "MultiLockGuard.h"
+
 
 namespace LIB_LSX {
 namespace Memory {
 
-// 构造函数
-Buffer::Buffer(size_t initial_size) : buffer_(initial_size) {
-    // 成员初始化不需要加锁
-    // std::cout << "Buffer: Created with size " << initial_size << std::endl;
+Buffer::Buffer() {
+    // std::cout << "Buffer: Created empty buffer." << std::endl; // Use logging
 }
 
-// 从数据构造的构造函数
-Buffer::Buffer(const uint8_t* data, size_t size) : buffer_(size) {
-    // 成员初始化不需要加锁
-    if (data) {
-        std::memcpy(buffer_.data(), data, size);
+Buffer::Buffer(size_t size) {
+    if (size > 0) {
+        try {
+            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            data_vector_.resize(size);
+            // std::cout << "Buffer: Allocated buffer of size " << size << std::endl; // Use logging
+        } catch (const std::bad_alloc& e) {
+             std::cerr << "Buffer: Failed to allocate buffer of size " << size << ": " << e.what() << std::endl;
+             // data_vector_ will be empty - safe state
+             throw; // Re-throw
+        }
+    } else {
+         // std::cout << "Buffer: Created buffer with requested size 0 (empty)." << std::endl; // Use logging
     }
-    // std::cout << "Buffer: Created from data with size " << size << std::endl;
-}
-
-// 拷贝构造函数
-Buffer::Buffer(const Buffer& other) {
-    // 使用我们自定义的 LockGuard 安全地拷贝 'other' 的内部状态
-    LIBLSX::LockManager::LockGuard<std::mutex> lock_other(other.mutex_);
-    buffer_ = other.buffer_;
-    // std::cout << "Buffer: Copied." << std::endl;
-}
-
-// 移动构造函数
-// 移动操作通常不需要加锁，因为假定 'other' 在移动后不再被并发访问。
-Buffer::Buffer(Buffer&& other) noexcept : buffer_(std::move(other.buffer_)) {
-    // std::cout << "Buffer: Moved." << std::endl;
-}
-
-// 拷贝赋值运算符
-Buffer& Buffer::operator=(const Buffer& other) {
-    if (this != &other) {
-        // 使用我们自定义的 MultiLockGuard 原子性地获取 'this' 和 'other' 的锁
-        // 这可以防止当其他线程也尝试赋值时发生死锁。
-        LIBLSX::LockManager::MultiLockGuard<std::mutex, std::mutex> lock_pair(mutex_, other.mutex_);
-
-        buffer_ = other.buffer_;
-    }
-    // std::cout << "Buffer: Copy assigned." << std::endl;
-    return *this;
-}
-
-// 移动赋值运算符
-// 移动操作通常不需要加锁，因为假定 'other' 在移动后不再被并发访问。
-Buffer& Buffer::operator=(Buffer&& other) noexcept {
-    if (this != &other) {
-        buffer_ = std::move(other.buffer_);
-    }
-    // std::cout << "Buffer: Move assigned." << std::endl;
-    return *this;
-}
-
-Buffer::~Buffer() {
-    // 成员清理不需要加锁，因为互斥量本身也在被销毁。
-    // std::cout << "Buffer: Destroyed." << std::endl;
-}
-
-// 数据访问
-// 警告: 这些方法返回原始指针。如果调用者通过此指针在 Buffer 加锁方法外部进行修改或读取，
-// 可能会导致数据竞争。此处假定调用者在使用这些原始指针时会确保线程安全，
-// 或它们仅在其他已加锁的 Buffer 方法内部使用，以避免潜在的嵌套加锁问题。
-uint8_t* Buffer::Data() {
-    // 此处不加内部锁，以避免与调用方可能持有的锁发生嵌套死锁。
-    return buffer_.data();
-}
-
-const uint8_t* Buffer::Data() const {
-    // 此处不加内部锁。原因同上。
-    return buffer_.data();
-}
-
-size_t Buffer::Size() const {
-    // 使用我们自定义的 LockGuard 保护对 buffer_ 大小的访问。
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
-    return buffer_.size();
-}
-
-// 操作 - 所有这些方法都在内部处理锁管理
-bool Buffer::WriteAt(size_t offset, const uint8_t* data, size_t size) {
-    // 使用我们自定义的 LockGuard 保护内部状态。
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
-    if (offset + size > buffer_.size()) {
-        std::cerr << "Buffer: WriteAt failed. Offset + size exceeds buffer size." << std::endl;
-        return false;
-    }
-    if (data) {
-        std::memcpy(buffer_.data() + offset, data, size);
-    }
-    return true;
-}
-
-bool Buffer::ReadAt(size_t offset, uint8_t* data, size_t size) const {
-    // 使用我们自定义的 LockGuard 保护内部状态。
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
-    if (offset + size > buffer_.size()) {
-        std::cerr << "Buffer: ReadAt failed. Offset + size exceeds buffer size." << std::endl;
-        return false;
-    }
-    if (data) {
-        std::memcpy(data, buffer_.data() + offset, size);
-    }
-    return true;
 }
 
 bool Buffer::Resize(size_t new_size) {
-    // 使用我们自定义的 LockGuard 保护内部状态。
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     try {
-        buffer_.resize(new_size);
-        // std::cout << "Buffer: Resized to " << new_size << std::endl;
+        LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+        data_vector_.resize(new_size);
+        // std::cout << "Buffer: Resized buffer to " << new_size << std::endl; // Use logging
         return true;
     } catch (const std::bad_alloc& e) {
-        std::cerr << "Buffer: Resize failed due to memory allocation error: " << e.what() << std::endl;
-        return false;
-    } catch (...) {
-        std::cerr << "Buffer: Resize failed due to unknown error." << std::endl;
+        std::cerr << "Buffer: Failed to resize buffer to " << new_size << ": " << e.what() << std::endl;
         return false;
     }
 }
 
 void Buffer::Clear() {
-    // 使用我们自定义的 LockGuard 保护内部状态。
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
-    buffer_.clear();
-    // std::cout << "Buffer: Cleared." << std::endl;
+    Resize(0); // Resize to empty handles locking internally
+    // std::cout << "Buffer: Cleared." << std::endl; // Use logging
 }
 
 void Buffer::Fill(uint8_t value) {
-    // 使用我们自定义的 LockGuard 保护内部状态。
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
-    std::fill(buffer_.begin(), buffer_.end(), value);
-    // std::cout << "Buffer: Filled with value " << static_cast<int>(value) << std::endl;
+     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    if (!data_vector_.empty()) {
+        std::fill(data_vector_.begin(), data_vector_.end(), value);
+        // std::cout << "Buffer: Filled buffer with value " << (int)value << std::endl; // Use logging
+    }
 }
 
-// 注意: `Buffer.h` 中公共的 `Lock()` 和 `Unlock()` 方法已被移除，
-// 因为它们违反了 RAII 原则。使用者应依赖 Buffer 内部通过 LockManager 封装提供的加锁机制，
-// 或者如果需要进行复杂的自定义操作，可以对 Buffer 实例的互斥量获取外部锁。
 
-// 获取字符串表示 (用于调试/显示)
-std::string Buffer::ToString() const {
-    // 使用我们自定义的 LockGuard 保护内部状态。
+uint8_t* Buffer::GetData() {
+    // Locking here provides a snapshot of the pointer, but doesn't protect *access* via the pointer
+    // concurrent with Resize. The WriteAt/ReadAt methods provide synchronized access.
+    // If a user gets the pointer and accesses it without calling WriteAt/ReadAt,
+    // they need external synchronization or must ensure no concurrent Resize occurs.
     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
-    std::string s;
-    s.reserve(buffer_.size() * 3); // 估计每字节需要两个字符加一个空格
-    char buf[4]; // 用于 snprintf 的缓冲区
-
-    for (size_t i = 0; i < buffer_.size(); ++i) {
-        // 使用 snprintf 更安全地格式化单个字节为十六进制字符串
-        snprintf(buf, sizeof(buf), "%02X ", buffer_[i]);
-        s += buf;
+    if (data_vector_.empty()) {
+        return nullptr;
     }
-    // 移除末尾可能存在的空格
-    if (!s.empty() && s.back() == ' ') {
-        s.pop_back();
-    }
-    return s;
+    return data_vector_.data();
 }
+
+const uint8_t* Buffer::GetData() const {
+     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    if (data_vector_.empty()) {
+        return nullptr;
+    }
+    return data_vector_.data();
+}
+
+size_t Buffer::WriteAt(size_t offset, const uint8_t* data, size_t size) {
+     if (data == nullptr || size == 0) {
+         return 0;
+     }
+     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect data_vector_ and its data pointer
+
+     if (offset >= data_vector_.size()) {
+         // std::cerr << "Buffer: WriteAt failed. Offset " << offset << " is out of bounds (size " << data_vector_.size() << ")." << std::endl; // Use logging
+         return 0;
+     }
+
+     size_t bytes_to_write = std::min(size, data_vector_.size() - offset);
+     if (bytes_to_write > 0) {
+         uint8_t* dest = data_vector_.data() + offset;
+         std::memcpy(dest, data, bytes_to_write);
+        // std::cout << "Buffer: Wrote " << bytes_to_write << " bytes at offset " << offset << "." << std::endl; // Use logging
+     }
+     return bytes_to_write;
+}
+
+size_t Buffer::WriteAt(size_t offset, const std::vector<uint8_t>& data) {
+    return WriteAt(offset, data.data(), data.size());
+}
+
+
+size_t Buffer::ReadAt(size_t offset, uint8_t* buffer, size_t size) const {
+    if (buffer == nullptr || size == 0) {
+        return 0;
+    }
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect data_vector_ and its data pointer
+
+    if (offset >= data_vector_.size()) {
+        // std::cerr << "Buffer: ReadAt failed. Offset " << offset << " is out of bounds (size " << data_vector_.size() << ")." << std::endl; // Use logging
+        return 0;
+    }
+
+    size_t bytes_to_read = std::min(size, data_vector_.size() - offset);
+     if (bytes_to_read > 0) {
+        const uint8_t* src = data_vector_.data() + offset;
+        std::memcpy(buffer, src, bytes_to_read);
+        // std::cout << "Buffer: Read " << bytes_to_read << " bytes from offset " << offset << "." << std::endl; // Use logging
+     }
+    return bytes_to_read;
+}
+
+std::vector<uint8_t> Buffer::ReadAt(size_t offset, size_t size) const {
+    std::vector<uint8_t> buffer(size);
+    size_t bytes_read = ReadAt(offset, buffer.data(), size);
+    buffer.resize(bytes_read);
+    return buffer;
+}
+
+
+size_t Buffer::GetSize() const {
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    return data_vector_.size();
+}
+
+bool Buffer::IsEmpty() const {
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    return data_vector_.empty();
+}
+
+size_t Buffer::Capacity() const {
+     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+     // For std::vector based buffer, capacity is size unless reserved
+     // Returning size is fine here as it represents the usable space managed by this class
+     return data_vector_.size();
+}
+
 
 } // namespace Memory
 } // namespace LIB_LSX

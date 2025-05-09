@@ -69,6 +69,10 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 
 #include "ThreadWrapper.h" // 包含 ThreadWrapper 类定义
 #include <vector> // 包含 std::vector

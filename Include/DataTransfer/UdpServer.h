@@ -136,6 +136,10 @@
 #ifndef LSX_UDP_SERVER_H
 #define LSX_UDP_SERVER_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 #include "ICommunication.h" // 包含通信接口基类
 #include <cstdint> // 包含 uint16_t
 

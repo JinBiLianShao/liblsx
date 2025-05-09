@@ -60,6 +60,10 @@
 #ifndef THREADSTATE_H
 #define THREADSTATE_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 
 /**
  * @brief LSX 库的根命名空间。

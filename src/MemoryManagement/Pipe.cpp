@@ -5,6 +5,8 @@
 #include <condition_variable> // For std::condition_variable
 #include <chrono> // For std::chrono::milliseconds
 // #include <iostream>  // For example output - prefer logging
+#include "LockGuard.h"
+#include "MultiLockGuard.h"
 
 namespace LIB_LSX {
 namespace Memory {
@@ -20,7 +22,7 @@ Pipe::~Pipe() {
 }
 
 void Pipe::Clear() {
-    std::lock_guard<std::mutex> lock(mutex_); // Thread safe clear
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);// Thread safe clear
     byte_stream_.clear(); // std::deque::clear()
     // std::cout << "Pipe: Cleared." << std::endl; // Use logging
     // cv_write_.notify_all(); // Notify potential waiting writers (if bounded pipe)
@@ -32,7 +34,7 @@ size_t Pipe::Write(const uint8_t* data, size_t size) {
     if (data == nullptr || size == 0) {
         return 0;
     }
-    std::lock_guard<std::mutex> lock(mutex_); // Thread safe write
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);// Thread safe write
 
     // Optional: check and wait if pipe is full (for bounded pipe)
     // if (byte_stream_.size() + size > capacity_) { /* handle full */ }
@@ -58,7 +60,7 @@ size_t Pipe::Read(uint8_t* buffer, size_t size) {
     if (buffer == nullptr || size == 0) {
         return 0;
     }
-    std::lock_guard<std::mutex> lock(mutex_); // Thread safe read
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);// Thread safe read
 
     // Optional: check and wait if pipe is empty (for blocking read, handled in ReadBlocking)
 
@@ -86,7 +88,7 @@ size_t Pipe::Peek(uint8_t* buffer, size_t size) const {
     if (buffer == nullptr || size == 0) {
         return 0;
     }
-    std::lock_guard<std::mutex> lock(mutex_); // Thread safe peek
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);// Thread safe peek
 
     size_t bytes_to_peek = std::min(size, byte_stream_.size());
 

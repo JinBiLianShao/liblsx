@@ -7,6 +7,8 @@
 #include <chrono> // For std::chrono::milliseconds
 #include <iostream> //保留用于调试，发布时可移除或替换为日志库
 // #include <iostream>  // For example output - prefer logging
+#include "LockGuard.h"
+#include "MultiLockGuard.h"
 
 
 namespace LIB_LSX {
@@ -57,7 +59,7 @@ FixedSizeQueue::FixedSizeQueue(size_t block_size, size_t block_count)
 }
 
 void FixedSizeQueue::Clear() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     head_ = 0;
     tail_ = 0;
     current_size_ = 0;
@@ -71,7 +73,7 @@ bool FixedSizeQueue::Put(const uint8_t* data, size_t data_size) {
         // std::cerr << "FixedSizeQueue: Put failed. Invalid data or size mismatch." << std::endl;
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
 
     if (current_size_ == block_count_) { // IsFull_unsafe()
         // std::cout << "FixedSizeQueue: Queue is full, cannot Put." << std::endl;
@@ -100,7 +102,7 @@ bool FixedSizeQueue::Get(uint8_t* buffer, size_t buffer_size) {
         // std::cerr << "FixedSizeQueue: Get failed. Invalid buffer or size too small." << std::endl;
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
 
     if (current_size_ == 0) { // IsEmpty_unsafe()
         // std::cout << "FixedSizeQueue: Queue is empty, cannot Get." << std::endl;
@@ -120,7 +122,7 @@ bool FixedSizeQueue::Get(uint8_t* buffer, size_t buffer_size) {
 }
 
 std::optional<std::vector<uint8_t>> FixedSizeQueue::Get() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     if (current_size_ == 0) { // IsEmpty_unsafe()
         // std::cout << "FixedSizeQueue: Queue is empty, cannot Get (vector)." << std::endl;
         return std::nullopt;
@@ -144,7 +146,7 @@ bool FixedSizeQueue::Peek(uint8_t* buffer, size_t buffer_size) const {
         // std::cerr << "FixedSizeQueue: Peek failed. Invalid buffer or size too small." << std::endl;
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
 
     if (current_size_ == 0) { // IsEmpty_unsafe()
         // std::cout << "FixedSizeQueue: Queue is empty, cannot Peek." << std::endl;
@@ -159,7 +161,7 @@ bool FixedSizeQueue::Peek(uint8_t* buffer, size_t buffer_size) const {
 }
 
 std::optional<std::vector<uint8_t>> FixedSizeQueue::Peek() const {
-     std::lock_guard<std::mutex> lock(mutex_);
+     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     if (current_size_ == 0) { // IsEmpty_unsafe()
         // std::cout << "FixedSizeQueue: Queue is empty, cannot Peek (vector)." << std::endl;
         return std::nullopt;
@@ -311,17 +313,17 @@ bool FixedSizeQueue::PutBlocking(const std::vector<uint8_t>& data, long timeout_
 // The lambdas for CVs correctly capture `this` and access `current_size_` while lock is held.
 
 bool FixedSizeQueue::IsEmpty() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     return current_size_ == 0;
 }
 
 bool FixedSizeQueue::IsFull() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     return current_size_ == block_count_;
 }
 
 size_t FixedSizeQueue::Size() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     return current_size_;
 }
 

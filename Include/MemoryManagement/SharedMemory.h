@@ -150,6 +150,10 @@
 #ifndef LIB_LSX_MEMORY_SHARED_MEMORY_H
 #define LIB_LSX_MEMORY_SHARED_MEMORY_H
 #pragma once
+// 包含全局错误锁头文件
+#include "GlobalErrorMutex.h"
+// 包含 LIBLSX::LockManager::LockGuard 头文件
+#include "LockGuard.h"
 #include <cstddef> // For size_t
 #include <string> // For std::string
 #include <vector> // For convenience read/write methods

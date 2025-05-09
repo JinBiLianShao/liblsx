@@ -4,7 +4,8 @@
 #include <cstring> // For strncpy, memcpy
 #include <algorithm> // For std::min
 #include <stdexcept> // For exceptions
-#include <mutex>    // Already included in header
+#include "LockGuard.h"
+#include "MultiLockGuard.h"
 
 // Include OS-specific headers here for implementation
 #ifdef _WIN32
@@ -36,7 +37,7 @@ SharedMemory::~SharedMemory() {
 }
 
 bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
-    std::lock_guard<std::mutex> lock(mutex_); // Protect instance state during creation
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state during creation
 
     if (size == 0) {
         std::cerr << "SharedMemory: Create failed. Size must be greater than 0." << std::endl;
@@ -138,7 +139,7 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
 
 
 bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
-     std::lock_guard<std::mutex> lock(mutex_); // Protect instance state
+     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
 
      if (size == 0) {
          std::cerr << "SharedMemory: Open failed. Size must be greater than 0." << std::endl;
@@ -216,7 +217,7 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
 
 
 void SharedMemory::Detach() {
-    std::lock_guard<std::mutex> lock(mutex_); // Protect instance state
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
 
     if (!IsAttached()) { // Check locked by lock_guard
         // std::cout << "SharedMemory: Not attached, nothing to detach." << std::endl; // Use logging
@@ -260,7 +261,7 @@ void SharedMemory::Detach() {
 }
 
 bool SharedMemory::Destroy() {
-    std::lock_guard<std::mutex> lock(mutex_); // Protect instance state
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
 
     if (!is_owner_) { // Check locked by lock_guard
          // std::cout << "SharedMemory: Not owner, cannot destroy." << std::endl; // Use logging
@@ -312,7 +313,7 @@ bool SharedMemory::Destroy() {
 }
 
 void* SharedMemory::GetAddress() const {
-    std::lock_guard<std::mutex> lock(mutex_); // Protect access to lpBaseAddress_/shm_address_
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to lpBaseAddress_/shm_address_
     if (!IsAttached()) { // Check locked by lock_guard
         // std::cerr << "SharedMemory: Cannot get address, not attached." << std::endl; // Use logging
         return nullptr;
@@ -328,7 +329,7 @@ size_t SharedMemory::Write(size_t offset, const uint8_t* data, size_t size) {
     if (data == nullptr || size == 0) {
         return 0;
     }
-    std::lock_guard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
 
     if (!IsAttached()) { // Check locked by lock_guard
          // std::cerr << "SharedMemory: Write failed. Not attached." << std::endl; // Use logging
@@ -358,7 +359,7 @@ size_t SharedMemory::Read(size_t offset, uint8_t* buffer, size_t size) const {
     if (buffer == nullptr || size == 0) {
         return 0;
     }
-    std::lock_guard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
 
     if (!IsAttached()) { // Check locked by lock_guard
          // std::cerr << "SharedMemory: Read failed. Not attached." << std::endl; // Use logging
@@ -388,13 +389,12 @@ std::vector<uint8_t> SharedMemory::Read(size_t offset, size_t size) const {
 
 
 size_t SharedMemory::GetSize() const {
-    std::lock_guard<std::mutex> lock(mutex_); // Protect access to size_
+    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to size_
     return size_; // Returns the size this instance was created/opened with
     // A more robust POSIX implementation would use shmctl(IPC_STAT) to get the *actual* size.
 }
 
 bool SharedMemory::IsAttached() const {
-    std::lock_guard<std::mutex> lock(mutex_); // Protect access to attachment state variables
 #ifdef _WIN32
     return lpBaseAddress_ != nullptr;
 #else // POSIX
@@ -403,7 +403,7 @@ bool SharedMemory::IsAttached() const {
 }
 
 bool SharedMemory::IsOwner() const {
-     std::lock_guard<std::mutex> lock(mutex_); // Protect access to is_owner_
+     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to is_owner_
     return is_owner_;
 }
 
