@@ -1,7 +1,6 @@
-// LSXTransportLib: 数据传输工具库（跨平台）
-// 命名空间：LSX_LIB
 
 // ---------- File: WinsockManager.cpp ----------
+#pragma once
 #include "WinsockManager.h"
 #include "GlobalErrorMutex.h" // 包含全局错误锁头文件
 

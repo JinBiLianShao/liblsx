@@ -1,7 +1,6 @@
-// LSXTransportLib: 数据传输工具库（跨平台）
-// 命名空间：LSX_LIB
 
 // ---------- File: CommunicationFactory.cpp ----------
+#pragma once
 #include "CommunicationFactory.h"
 #include "UdpClient.h"
 #include "UdpServer.h"

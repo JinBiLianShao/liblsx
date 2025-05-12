@@ -1,7 +1,6 @@
-// LSXTransportLib: 数据传输工具库（跨平台）
-// 命名空间：LSX_LIB
 
 // ---------- File: SerialPort.cpp ----------
+#pragma once
 #include "SerialPort.h"
 #include <iostream> // 包含 std::cerr, std::cout
 #include <cstring> // 包含 memset

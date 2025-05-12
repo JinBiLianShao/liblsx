@@ -1,15 +1,12 @@
-// FileName: FixedSizePipe.cpp
-//
-// Created by admin on 2025/5/8.
-//
+#pragma once
 #include "FixedSizePipe.h"
 
-#include <cstring> // For memcpy
-#include <algorithm> // For std::min, std::copy
-#include <mutex> // For std::mutex, std::lock_guard, std::unique_lock
-#include <condition_variable> // For std::condition_variable
-#include <chrono> // For std::chrono::milliseconds
-#include <iostream> // 保留用于调试，发布时可移除或替换为日志库
+#include <cstring>
+#include <algorithm>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
+#include <iostream>
 // #include <iostream>
 #include "LockGuard.h"
 #include "MultiLockGuard.h"
@@ -321,13 +318,6 @@ size_t FixedSizePipe::Size() const {
     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
     return current_size_;
 }
-
-// BlockSize(), BlockCount(), TotalSize() are const and access members initialized at construction,
-// so they don't strictly need locks if those members are guaranteed not to change after construction.
-// However, adding locks for consistency with IsEmpty/IsFull/Size is also fine and safer if any
-// future modification might change these. Given they are simple getters of immutable-post-construction values,
-// locks are usually omitted for performance, but for safety/consistency, keeping them is not wrong.
-// The .h file has them without locks for BlockSize/BlockCount/TotalSize, which is typical.
 
 } // namespace Memory
 } // namespace LIB_LSX

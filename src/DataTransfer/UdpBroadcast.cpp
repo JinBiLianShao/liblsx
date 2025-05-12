@@ -1,21 +1,21 @@
-// LSXTransportLib: 数据传输工具库（跨平台）
-// 命名空间：LSX_LIB
+
 
 // ---------- File: UdpBroadcast.cpp ----------
+#pragma once
 #include "UdpBroadcast.h"
 #ifdef _WIN32
-   #include <winsock2.h> // 包含自 UdpClient.h
+   #include <winsock2.h>
 #else
-#include <sys/types.h> // 包含自 UdpClient.h
-#include <unistd.h> // 包含自 UdpClient.h
-#include <errno.h> // For errno
-#include <string.h> // For strerror
-#include <sys/socket.h> // Ensure socket headers are available for setsockopt constants
+#include <sys/types.h>
+#include <unistd.h>
+#include <cerrno>
+#include <cstring>
+#include <sys/socket.h>
 #endif
-#include <cstring> // 包含自 UdpClient.h
-#include <iostream> // For std::cerr
-#include <mutex> // 包含 std::mutex (UdpClient.h 已包含)
-#include "GlobalErrorMutex.h" // 包含全局错误锁头文件 (UdpClient.h 已包含)
+#include <cstring>
+#include <iostream>
+#include <mutex>
+#include "GlobalErrorMutex.h"
 
 namespace LSX_LIB::DataTransfer
 {

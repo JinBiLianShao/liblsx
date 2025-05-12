@@ -1,11 +1,11 @@
-// LSXTransportLib: 数据传输工具库（跨平台）
-// 命名空间：LSX_LIB
+
 
 // ---------- File: UdpClient.cpp ----------
+#pragma once
 #include "UdpClient.h"
-#include <cstring> // 包含 memset
-#include <limits> // 包含 numeric_limits
-#include <algorithm> // 包含 std::min
+#include <cstring>
+#include <limits>
+#include <algorithm>
 
 namespace LSX_LIB::DataTransfer
 {

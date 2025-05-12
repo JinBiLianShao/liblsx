@@ -1,4 +1,5 @@
-#include "Condition.h" // 包含对应的头文件
+#pragma once
+#include "Condition.h"
 
 namespace LIBLSX {
     namespace LockManager {

@@ -1,8 +1,9 @@
+#pragma once
 #include "Buffer.h"
 
-#include <cstring> // For memcpy
-#include <algorithm> // For std::min, std::fill
-// #include <iostream> // For example output - prefer logging
+#include <cstring>
+#include <algorithm>
+ #include <iostream>
 #include <iostream>
 #include "LockGuard.h"
 #include "MultiLockGuard.h"

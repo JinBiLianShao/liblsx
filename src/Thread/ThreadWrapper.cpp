@@ -1,3 +1,4 @@
+#pragma once
 #include "ThreadWrapper.h"
 #include <iostream> // 仅用于示例或调试输出
 #include <chrono>   // 用于 sleep 或 timed_wait

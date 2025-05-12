@@ -1,7 +1,6 @@
-// LSXTransportLib: 数据传输工具库（跨平台）
-// 命名空间：LSX_LIB
 
 // ---------- File: GlobalErrorMutex.cpp ----------
+#pragma once
 #include "GlobalErrorMutex.h"
 
 namespace LSX_LIB::DataTransfer {

@@ -1,3 +1,4 @@
+#pragma once
 #include "Scheduler.h"
 #include <chrono>
 #include <iostream> // 用于可能的错误/调试输出

@@ -1,3 +1,4 @@
+#pragma once
 #include "Pipe.h"
 
 #include <algorithm> // For std::min
