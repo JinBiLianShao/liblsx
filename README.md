@@ -3,7 +3,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![C++17](https://img.shields.io/badge/C++-17-blue.svg)
 
-LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提供高效且易用的基础组件。当前已开发完成 **线程管理（Thread）**、**数据通信（DataTransfer）** 和 **内存管理（Memory）** 和 **锁管理（LockManager）** 四大核心模块。
+LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提供高效且易用的基础组件。当前已开发完成 **线程管理（Thread）**、**数据通信（DataTransfer）**、**内存管理（Memory）**、**锁管理（LockManager）** 和 **日志系统（Logger）** 五大核心模块。
 
 ## 功能特性
 
@@ -34,6 +34,17 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 - **死锁自动避免**：`MultiLockGuard` 类利用 C++17 的 `std::scoped_lock`，在单个原子操作中同时获取多个互斥量，内置死锁避免算法，从根本上解决多锁场景下的死锁问题。
 - **条件变量支持**：`Condition` 类封装 `std::condition_variable_any`，提供强大的线程间协作和同步机制，并通过强制使用谓词 (predicate) 有效避免“虚假唤醒”。
 - **C++17 标准兼容**：充分利用 `if constexpr`、`std::scoped_lock`、`std::is_same_v` 等 C++17 特性，提供更高效、更简洁的实现。
+
+### 5. Logger 模块
+- **多线程安全**：内部使用互斥锁和原子操作，确保在多线程环境下的日志写入安全。
+- **跨平台支持**：主要依赖 C++ 标准库，兼容 Windows/Linux/macOS。
+- **日志级别控制**：支持 DEBUG, INFO, WARNING, ERROR 四种级别，可动态调整。
+- **多种输出目标**：支持控制台 (Console) 和本地文件 (File) 输出。
+- **动态切换输出**：可在运行时动态切换日志的输出目标。
+- **文件日志轮转**：文件输出模式下，支持按最大行数限制进行日志轮转，保留最新日志。
+- **灵活配置**：通过 `LoggerConfig` 进行初始化配置。
+- **清晰的日志格式**：包含时间戳、线程ID、级别、代码位置 (文件、行号、函数) 和消息。
+- **便捷宏定义**：提供 `LSX_LOG_DEBUG`, `LSX_LOG_INFO` 等宏简化日志调用。
 
 ## 快速开始
 
@@ -137,6 +148,33 @@ void transfer_funds(int amount, int& from_balance, int& to_balance, std::mutex& 
 // t1.join(); t2.join();
 ```
 
+#### 日志系统 (Logger)
+
+```cpp
+#include "LIBLSX/Logger/Logger.h"
+
+using namespace LIBLSX::Logger;
+
+int main() { // Note: Logger instance lifecycle needs management in a real app.
+    LoggerConfig config;
+    config.level = LogLevel::DEBUG; // 设置级别为 DEBUG
+    config.mode = OutputMode::Console; // 输出到控制台
+
+    Logger logger(config); // 创建 Logger 实例
+
+    // 使用日志宏记录日志
+    LSX_LOG_DEBUG(logger, "这是一个调试信息.");
+    LSX_LOG_INFO(logger, "应用程序启动.");
+    LSX_LOG_WARNING(logger, "发现一个潜在问题.");
+    LSX_LOG_ERROR(logger, "发生严重错误!");
+
+    // logger.SetLogLevel(LogLevel::INFO); // 动态改变级别示例
+    // LSX_LOG_DEBUG(logger, "这条 DEBUG 日志不会被记录.");
+
+    return 0;
+}
+```
+
 ## 模块文档
 
 | 模块          | 功能说明                              | 详细文档链接                                                                       |
@@ -145,13 +183,14 @@ void transfer_funds(int amount, int& from_balance, int& to_balance, std::mutex& 
 | **DataTransfer** | 网络与串口通信                      | [DataTransfer 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FDataTransfer%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20DataTransfer%20%E6%A8%A1%E5%9D%97%20%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%96%87%E6%A1%A3.md) |
 | **Memory** | 内存管理与数据结构                    | [Memory 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FMemoryManagement%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Memory%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **LockManager**| RAII 锁管理与并发原语               | [LockManager 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example/LockManager/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20LockManager%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Logger** | 轻量级多功能日志系统                  | [Logger 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example/Logger/LSX_LIB%E5%B7%A5%E5%85%B7%E5%BA%93Logger%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 
 ## 项目状态与贡献
 
 - **当前版本**：v0.1.0（开发中）
-- **待开发模块**：日志系统、配置解析、异步任务队列等。
+- **待开发模块**：配置解析、异步任务队列等。
 - **欢迎贡献**：欢迎提交 Issue 或 PR，共同完善功能模块。请遵循项目的代码规范与协议。
 
 ## 许可证
 
-本项目采用 **MIT 许可证**。详情请参阅 [LICENSE](LICENSE) 文件。
+本项目采用 **MIT 许可证**。详情请参阅 [LICENSE](https://www.google.com/search?q=LICENSE) 文件。
