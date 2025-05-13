@@ -65,5 +65,5 @@ list(REMOVE_DUPLICATES INCLUDE_DIRS)
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 
 # 链接pthread库
-target_link_libraries(${PROJECT_NAME} pthread rt)
+target_link_libraries(${PROJECT_NAME} pthread rt sqlite3)
 #target_link_libraries(${PROJECT_NAME} pthread ws2_32) #Windows下打开
