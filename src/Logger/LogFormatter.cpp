@@ -1,10 +1,11 @@
 #include "LogFormatter.h"
 
 #include <cstring>
-#include <ctime> // For std::localtime
+#include <ctime>
 
-// C++17 <filesystem> for path manipulation, but for __FILE__ we just need the basename.
-// For simplicity, we can implement a basic basename extractor.
+// 使用 C++17 的 <filesystem> 进行路径处理，但对于 __FILE__ 宏我们只需要提取文件名（basename）即可。
+// 为了简单起见，我们可以实现一个基础的文件名提取函数。
+
 #if __cplusplus >= 201703L && __has_include(<filesystem>)
 #include <filesystem>
 namespace fs = std::filesystem;
