@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态配置 - CRUD</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .form-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .form-modal.active {
+            display: block;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .overlay.active {
+            display: block;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <button onclick="showAddForm()">新增配置</button>
+    <table id="dataTable">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- 表单弹窗 -->
+    <div class="overlay" id="overlay"></div>
+    <div class="form-modal" id="formModal">
+        <h3 id="formTitle">新增配置</h3>
+        <form id="dataForm">
+            <div id="formFields"></div>
+            <button type="button" onclick="submitForm()">提交</button>
+            <button type="button" onclick="hideForm()">取消</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let columns = ['id', 'key', 'value']; // 动态列名
+    let currentData = []; // 当前数据
+    let isEditMode = false; // 是否为编辑模式
+    let editId = null; // 当前编辑的ID
+
+    // 初始化加载数据
+    window.onload = async () => {
+        await fetchData();
+        renderTable();
+    };
+
+    // 获取数据
+    async function fetchData() {
+        const res = await fetch('/api/data');
+        currentData = await res.json();
+        renderTable();
+    }
+
+    // 渲染表格
+    function renderTable() {
+        const thead = document.querySelector('#dataTable thead');
+        const tbody = document.querySelector('#dataTable tbody');
+
+        // 渲染表头
+        thead.innerHTML = `
+                <tr>
+                    ${columns.map(col => `<th>${col}</th>`).join('')}
+                    <th>操作</th>
+                </tr>
+            `;
+
+        // 渲染表格内容
+        tbody.innerHTML = currentData.map(item => `
+                <tr>
+                    ${columns.map(col => `<td>${item[col]}</td>`).join('')}
+                    <td>
+                        <button onclick="editItem('${item.id}')">编辑</button>
+                        <button onclick="deleteItem('${item.id}')">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+    }
+
+    // 显示表单（新增）
+    function showAddForm() {
+        isEditMode = false;
+        document.getElementById('formTitle').textContent = '新增配置';
+        document.getElementById('formModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+        generateFormFields();
+    }
+
+    // 显示表单（编辑）
+    async function editItem(id) {
+        isEditMode = true;
+        editId = id;
+        const item = currentData.find(d => d.id === id);
+        document.getElementById('formTitle').textContent = '编辑配置';
+        document.getElementById('formModal').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+        generateFormFields(item);
+    }
+
+    // 生成动态表单
+    function generateFormFields(item = {}) {
+        const formFields = document.getElementById('formFields');
+        formFields.innerHTML = columns.map(col => `
+                <div>
+                    <label>${col}：
+                        <input
+                            type="text"
+                            id="input_${col}"
+                            value="${item[col] || ''}"
+                            ${col === 'id' ? 'disabled' : ''}
+                        >
+                    </label>
+                </div>
+            `).join('');
+    }
+
+    // 提交表单
+    async function submitForm() {
+        const formData = {};
+        columns.forEach(col => {
+            formData[col] = document.getElementById(`input_${col}`).value;
+        });
+
+        const url = isEditMode ? `/api/data/${editId}` : '/api/data';
+        const method = isEditMode ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            currentData = data;
+            renderTable();
+            hideForm();
+        } else {
+            alert('操作失败');
+        }
+    }
+
+    // 删除数据
+    async function deleteItem(id) {
+        if (confirm('确定删除吗？')) {
+            const res = await fetch(`/api/data/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                const data = await res.json();
+                currentData = data;
+                renderTable();
+            } else {
+                alert('删除失败');
+            }
+        }
+    }
+
+    // 隐藏表单
+    function hideForm() {
+        document.getElementById('formModal').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+    }
+</script>
+</body>
+</html>
