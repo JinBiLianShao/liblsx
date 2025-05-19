@@ -11,17 +11,18 @@
 #include <string>        // 用于字符串操作
 #include <vector>        // 用于存储查询结果等
 #include <functional>    // 用于 std::function (回调处理器)
-#include <stdexcept>     // 用于标准异常 (例如 runtime_error, out_of_range)
+#include <stdexcept>     // 用于标准异常 (例如 runtime_error, out_of_range, invalid_argument)
 
-#include <httplib.h>               // HTTP库，用于创建HTTP服务器
-#include <nlohmann/json.hpp>       // JSON库，用于处理JSON数据
-#include "SQLiteDB.h"              // SQLite数据库操作类
+#include <httplib.h>               // HTTP库，用于创建HTTP服务器 (cpp-httplib)
+#include <nlohmann/json.hpp>       // JSON库，用于处理JSON数据 (nlohmann/json)
+#include "SQLiteDB.h"              // SQLite数据库操作类 (您提供的头文件)
 
+// 使用 httplib 和 nlohmann/json 的命名空间简化代码
 using namespace httplib;
 using json = nlohmann::json;
 
 /**
- * @brief LSX_LIB 库的根命名空间 (根据原始提供者信息，可修改)。
+ * @brief LSX_LIB 库的根命名空间
  */
 namespace LSX_LIB {
     /**
@@ -62,7 +63,7 @@ namespace LSX_LIB {
              * @param port 服务器监听的端口号 (默认为 3000)。
              */
             ConfigServer(const std::string &dbPath, const std::string &baseDir = ".", int port = 3000)
-                    : db_(dbPath), port_(port), baseDir_(baseDir) {
+                    : db_(dbPath), port_(port), baseDir_(baseDir) { // db_ 使用您提供的 LSX_LIB::SQL::SQLiteDB
                 // 构造函数体，如有需要可添加初始化逻辑
             }
 
@@ -109,7 +110,7 @@ namespace LSX_LIB {
              * @endcode
              */
             void addCustomRoute(const std::string &method, const std::string &pattern,
-                                const std::function<void(const Request &, Response &)> &handler) {
+                                const std::function<void(const Request &, Response &)>& handler) {
                 if (method == "GET") {
                     svr_.Get(pattern.c_str(), handler);
                 } else if (method == "POST") {
@@ -132,9 +133,12 @@ namespace LSX_LIB {
              * 表包含 "id" (主键,自增), "key" (文本,非空,唯一), "value" (文本,非空) 三个字段。
              */
             void initializeDatabase() {
-                if (!db_.tableExists("config")) { // 假设 SQLiteDB 类有 tableExists 方法
+                // SQLiteDB::createTable 内部会检查表是否存在，若存在会打印消息并返回。
+                // 此处的 tableExists 调用是为了更明确地在 ConfigServer层面记录日志或行为。
+                // 如果不希望双重检查，可以直接调用 db_.createTable。
+                if (!db_.tableExists("config")) {
                     std::cout << "正在创建表 'config'..." << std::endl;
-                    db_.createTable("config", { // 假设 SQLiteDB 类有 createTable 方法
+                    db_.createTable("config", {
                             "id INTEGER PRIMARY KEY AUTOINCREMENT",
                             "key TEXT NOT NULL UNIQUE", // 配置键，必须唯一且不为空
                             "value TEXT NOT NULL"       // 配置值，不为空
@@ -585,7 +589,7 @@ namespace LSX_LIB {
             alert('配置键 (key) 不能为空。'); // 使用alert提示表单内校验错误
             return;
         }
-        if (!formData.value) { // 根据需求，value也可以允许为空，此处设为必填
+        if (!formData.value) { // 根据业务需求，value是否允许为空，此处设为必填
             alert('配置值 (value) 不能为空。');
             return;
         }
@@ -599,11 +603,6 @@ namespace LSX_LIB {
             alert('编辑错误：未指定配置项ID。');
             return;
         }
-        // 在编辑模式下，将id加入到formData中 (后端可能需要，也可能仅从URL获取)
-        // 此处后端实现为从URL获取ID，所以不在请求体中强制加入ID
-        // 但如果后端要求请求体包含ID，可以在这里添加：
-        // if (isEditMode) formData.id = editId;
-
 
         try {
             const res = await fetch(url, {
@@ -623,7 +622,6 @@ namespace LSX_LIB {
             console.error("表单提交错误:", error);
             // 对于表单提交的错误，可以直接在模态框内或通过alert提示用户
             alert(`操作失败: ${error.message}`);
-            // 或者也可以使用 displayApiError，但可能模态框已关闭
         }
     }
 
@@ -658,8 +656,6 @@ namespace LSX_LIB {
         document.getElementById('formModal').classList.remove('active');
         document.getElementById('overlay').classList.remove('active');
         document.getElementById('dataForm').reset(); // 清空表单字段
-        // 可选：当表单关闭时也清除主界面的API错误
-        // clearApiError();
     }
     // JavaScript逻辑结束
 </script>
@@ -686,7 +682,7 @@ namespace LSX_LIB {
                     auto result = db_.query("config", {"id", "key", "value"}, "", "id ASC", -1, -1);
                     json data = json::array(); // 初始化一个空的JSON数组
 
-                    for (const auto &row: result) { // 遍历查询结果的每一行
+                    for (const auto &row : result) { // 遍历查询结果的每一行
                         // SQLiteDB::query 返回 vector<vector<string>>
                         // 每行 (row) 是一个 vector<string>
                         if (row.size() >= 3) { // 确保行至少包含3个字段 (id, key, value)
@@ -697,22 +693,18 @@ namespace LSX_LIB {
                                 record["key"] = row[1];            // key 是第二个元素
                                 record["value"] = row[2];          // value 是第三个元素
                                 data.push_back(record);            // 将记录添加到JSON数组
-                            } catch (const std::invalid_argument &ia) {
-                                std::cerr << "错误：转换ID时发生无效参数错误 (id: '" << row[0] << "'): " << ia.what()
-                                          << std::endl;
-                                // 可选：跳过此记录或返回特定错误
-                            } catch (const std::out_of_range &oor) {
-                                std::cerr << "错误：转换ID时发生越界错误 (id: '" << row[0] << "'): " << oor.what()
-                                          << std::endl;
+                            } catch (const std::invalid_argument& ia) {
+                                std::cerr << "错误：转换ID时发生无效参数错误 (id: '" << row[0] << "'): " << ia.what() << std::endl;
+                            } catch (const std::out_of_range& oor) {
+                                std::cerr << "错误：转换ID时发生越界错误 (id: '" << row[0] << "'): " << oor.what() << std::endl;
                             }
                         } else {
-                            std::cerr << "警告：从数据库读取的行数据列数不足 (预期至少3列，实际" << row.size() << "列)。"
-                                      << std::endl;
+                            std::cerr << "警告：从数据库读取的行数据列数不足 (预期至少3列，实际" << row.size() << "列)。" << std::endl;
                         }
                     }
                     // 设置响应内容为JSON字符串，并指定字符集
                     res.set_content(data.dump(4), "application/json; charset=utf-8"); // dump(4) 用于格式化JSON输出（带缩进）
-                } catch (const std::exception &e) {
+                } catch (const std::exception &e) { // 捕获所有SQLiteDB可能抛出的std::exception (包括std::runtime_error)
                     std::cerr << "错误 (getAllConfigs): " << e.what() << std::endl;
                     res.status = 500; // 内部服务器错误
                     json error_res = {{"message", "获取配置列表失败: " + std::string(e.what())}};
@@ -731,25 +723,24 @@ namespace LSX_LIB {
             void addConfig(const Request &req, Response &res) {
                 try {
                     auto jsonData = json::parse(req.body); // 解析请求体中的JSON数据
-                    // 使用 .at() 获取字段，如果字段不存在会抛出 json::out_of_range 异常
                     std::string key = jsonData.at("key").get<std::string>();
                     std::string value = jsonData.at("value").get<std::string>();
 
-                    // 校验 key 和 value 是否为空
                     if (key.empty()) {
                         res.status = 400; // 错误请求
                         json error_res = {{"message", "配置键 (key) 不能为空"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                         return;
                     }
-                    if (value.empty()) { // 根据业务需求，value是否允许为空
+                    if (value.empty()) {
                         res.status = 400;
                         json error_res = {{"message", "配置值 (value) 不能为空"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                         return;
                     }
 
-                    // 向数据库插入新记录
+                    // 向数据库插入新记录。SQLiteDB::insert 接受 vector<vector<string>>
+                    // {{key, value}} 会隐式转换为 vector<vector<string>>{ vector<string>{key, value} }
                     db_.insert("config", {"key", "value"}, {{key, value}});
                     returnAllConfigs(res); // 返回更新后的所有配置项列表
                 }
@@ -760,24 +751,29 @@ namespace LSX_LIB {
                 }
                 catch (const json::type_error &e) { // JSON字段缺失或类型不匹配 (例如jsonData.at("key")失败)
                     res.status = 400;
-                    json error_res = {{"message", "请求的JSON中缺少 'key' 或 'value' 字段，或字段类型不正确: " +
-                                                  std::string(e.what())}};
+                    json error_res = {{"message", "请求的JSON中缺少 'key' 或 'value' 字段，或字段类型不正确: " + std::string(e.what())}};
                     res.set_content(error_res.dump(), "application/json; charset=utf-8");
                 }
-                catch (const std::runtime_error &e) { // 通常是数据库操作相关的运行时错误 (例如SQLite的UNIQUE约束失败)
+                    // 捕获SQLiteDB可能抛出的std::runtime_error (如UNIQUE约束) 和 std::invalid_argument (虽然此处调用不太可能触发)
+                catch (const std::runtime_error &e) {
                     std::string errMsg = e.what();
-                    if (errMsg.find("UNIQUE constraint failed") != std::string::npos) {
+                    // SQLiteDB::executeSQL 在 UNIQUE constraint failed 时会抛出包含 "UNIQUE constraint failed" 的 std::runtime_error
+                    if (errMsg.find("UNIQUE constraint failed") != std::string::npos || errMsg.find("UNIQUE constraint") != std::string::npos) {
                         res.status = 409; // 冲突 (Conflict)
-                        // 尝试从原始请求体中获取key，以提供更友好的错误提示
                         std::string conflictingKey = "未知";
-                        try { conflictingKey = json::parse(req.body).value("key", "未知"); } catch (...) {}
-                        json error_res = {{"message", "配置键 '" + conflictingKey + "' 已存在，无法重复添加。"}};
+                        try { conflictingKey = json::parse(req.body).value("key", "未知"); } catch(...) {}
+                        json error_res = {{"message", "配置键 '" + conflictingKey + "' 已存在，无法重复添加。" }};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                     } else {
                         res.status = 500; // 其他数据库错误视为内部服务器错误
                         json error_res = {{"message", "添加配置时数据库操作失败: " + errMsg}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                     }
+                }
+                catch (const std::invalid_argument &e) { // 由SQLiteDB::insert参数校验抛出 (理论上此处不会)
+                    res.status = 400;
+                    json error_res = {{"message", "提交的数据格式不正确 (列/值不匹配): " + std::string(e.what())}};
+                    res.set_content(error_res.dump(), "application/json; charset=utf-8");
                 }
                 catch (const std::exception &e) { // 捕获其他所有标准异常
                     std::cerr << "错误 (addConfig): " << e.what() << std::endl;
@@ -799,22 +795,18 @@ namespace LSX_LIB {
             void updateConfig(const Request &req, Response &res) {
                 long long id_val = 0; // 用于存储从路径参数转换得到的ID
                 try {
-                    // 检查路径参数中是否存在 "id"
                     if (!req.has_param("id")) {
                         res.status = 400; // 错误请求
                         json error_res = {{"message", "URL路径中缺少ID参数。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                         return;
                     }
-                    // 从路径参数获取ID字符串并转换为长整型
-                    id_val = std::stoll(req.path_params.at("id")); // .at() 如果 "id" 不存在会抛出 std::out_of_range
+                    id_val = std::stoll(req.path_params.at("id"));
 
-                    // 解析请求体JSON
                     auto jsonData = json::parse(req.body);
                     std::string key = jsonData.at("key").get<std::string>();
                     std::string value = jsonData.at("value").get<std::string>();
 
-                    // 校验 key 和 value 是否为空
                     if (key.empty()) {
                         res.status = 400;
                         json error_res = {{"message", "配置键 (key) 不能为空"}};
@@ -828,31 +820,39 @@ namespace LSX_LIB {
                         return;
                     }
 
-                    // 检查具有该ID的配置项是否存在于数据库中
                     auto existing = db_.query("config", {"id"}, "id = " + std::to_string(id_val), "", 1, 0);
-                    if (existing.empty()) { // 如果查询结果为空，表示记录不存在
+                    if (existing.empty()) {
                         res.status = 404; // 未找到 (Not Found)
                         json error_res = {{"message", "未找到ID为 " + std::to_string(id_val) + " 的配置项，无法更新。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                         return;
                     }
 
-                    // 更新数据库中的记录
+                    // 更新数据库中的记录。SQLiteDB::update 接受 vector<string> 作为值
                     db_.update("config", {"key", "value"}, {key, value}, "id = " + std::to_string(id_val));
-                    returnAllConfigs(res); // 返回更新后的所有配置项列表
+                    returnAllConfigs(res);
                 }
-                catch (const std::invalid_argument &ia_id) { // std::stoll 转换ID时的无效参数错误
+                catch (const std::invalid_argument& e) { // stoll 转换ID时的无效参数错误 或 SQLiteDB::update的参数错误
                     res.status = 400;
-                    json error_res = {{"message", "提供的ID参数不是一个有效的数字。"}};
-                    res.set_content(error_res.dump(), "application/json; charset=utf-8");
-                } catch (const std::out_of_range &oor_id) { // std::stoll 转换ID时的越界错误 或 req.path_params.at("id") 失败
-                    res.status = 400;
-                    // 根据错误来源区分是ID转换问题还是缺少ID参数 (虽然前面已用 has_param 检查)
-                    if (std::string(oor_id.what()).find("stoll") != std::string::npos) {
-                        json error_res = {{"message", "提供的ID值过大或过小。"}};
+                    std::string error_what = e.what();
+                    if (error_what.find("stoll") != std::string::npos || error_what.find("ID") != std::string::npos) { // 假设stoll的异常信息包含"stoll"
+                        json error_res = {{"message", "提供的ID参数不是一个有效的数字。" }};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
-                    } else { // 理论上不会到这里，因为 has_param 已检查
-                        json error_res = {{"message", "获取ID路径参数时发生错误。"}};
+                    } else { // SQLiteDB::update 抛出的 invalid_argument
+                        json error_res = {{"message", "更新数据格式不正确 (列/值不匹配): " + error_what}};
+                        res.set_content(error_res.dump(), "application/json; charset=utf-8");
+                    }
+                } catch (const std::out_of_range& oor) { // stoll 转换ID时的越界错误 或 req.path_params.at("id") / jsonData.at() 失败
+                    res.status = 400;
+                    std::string error_what = oor.what();
+                    if (error_what.find("stoll") != std::string::npos || error_what.find("ID") != std::string::npos) {
+                        json error_res = {{"message", "提供的ID值过大或过小。" }};
+                        res.set_content(error_res.dump(), "application/json; charset=utf-8");
+                    } else if (error_what.find("key") != std::string::npos || error_what.find("value") != std::string::npos) { // json.at() 失败
+                        json error_res = {{"message", "请求的JSON中缺少必须的字段 (如key或value)。"}};
+                        res.set_content(error_res.dump(), "application/json; charset=utf-8");
+                    } else { // 理论上是 req.path_params.at("id") 失败，但已用 has_param 检查
+                        json error_res = {{"message", "获取路径或JSON参数时发生越界错误。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                     }
                 }
@@ -861,19 +861,18 @@ namespace LSX_LIB {
                     json error_res = {{"message", "无效的JSON格式: " + std::string(e.what())}};
                     res.set_content(error_res.dump(), "application/json; charset=utf-8");
                 }
-                catch (const json::type_error &e) {
+                catch (const json::type_error &e) { // json.get<std::string>() 类型转换失败
                     res.status = 400;
-                    json error_res = {{"message", "请求的JSON中缺少 'key' 或 'value' 字段，或字段类型不正确: " +
-                                                  std::string(e.what())}};
+                    json error_res = {{"message", "请求的JSON中字段类型不正确: " + std::string(e.what())}};
                     res.set_content(error_res.dump(), "application/json; charset=utf-8");
                 }
                 catch (const std::runtime_error &e) { // SQLite的UNIQUE约束等数据库错误
                     std::string errMsg = e.what();
-                    if (errMsg.find("UNIQUE constraint failed") != std::string::npos) {
+                    if (errMsg.find("UNIQUE constraint failed") != std::string::npos || errMsg.find("UNIQUE constraint") != std::string::npos) {
                         res.status = 409; // 冲突
                         std::string conflictingKey = "未知";
-                        try { conflictingKey = json::parse(req.body).value("key", "未知"); } catch (...) {}
-                        json error_res = {{"message", "配置键 '" + conflictingKey + "' 已被其他配置项使用。"}};
+                        try { conflictingKey = json::parse(req.body).value("key", "未知"); } catch(...) {}
+                        json error_res = {{"message", "配置键 '" + conflictingKey + "' 已被其他配置项使用。" }};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                     } else {
                         res.status = 500;
@@ -908,7 +907,6 @@ namespace LSX_LIB {
                     }
                     id_val = std::stoll(req.path_params.at("id"));
 
-                    // 检查记录是否存在
                     auto existing = db_.query("config", {"id"}, "id = " + std::to_string(id_val), "", 1, 0);
                     if (existing.empty()) {
                         res.status = 404; // 未找到
@@ -917,25 +915,25 @@ namespace LSX_LIB {
                         return;
                     }
 
-                    // 从数据库删除记录
-                    db_.remove("config", "id = " + std::to_string(id_val)); // 假设 SQLiteDB 类有 remove 方法
-                    returnAllConfigs(res); // 返回更新后的所有配置项列表
+                    db_.remove("config", "id = " + std::to_string(id_val));
+                    returnAllConfigs(res);
                 }
-                catch (const std::invalid_argument &ia_id) {
+                catch (const std::invalid_argument& ia_id) { // stoll
                     res.status = 400;
-                    json error_res = {{"message", "提供的ID参数不是一个有效的数字。"}};
+                    json error_res = {{"message", "提供的ID参数不是一个有效的数字。" }};
                     res.set_content(error_res.dump(), "application/json; charset=utf-8");
-                } catch (const std::out_of_range &oor_id) {
+                } catch (const std::out_of_range& oor_id) { // stoll or req.path_params.at("id")
                     res.status = 400;
-                    if (std::string(oor_id.what()).find("stoll") != std::string::npos) {
-                        json error_res = {{"message", "提供的ID值过大或过小。"}};
+                    std::string error_what = oor_id.what();
+                    if (error_what.find("stoll") != std::string::npos || error_what.find("ID") != std::string::npos) {
+                        json error_res = {{"message", "提供的ID值过大或过小。" }};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                     } else {
-                        json error_res = {{"message", "获取ID路径参数时发生错误。"}}; // 理论上不应发生
+                        json error_res = {{"message", "获取ID路径参数时发生错误。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                     }
                 }
-                catch (const std::exception &e) { // 其他数据库错误或运行时错误
+                catch (const std::exception &e) { // 捕获SQLiteDB可能抛出的std::runtime_error等
                     std::cerr << "错误 (deleteConfig, id: " << id_val << "): " << e.what() << std::endl;
                     res.status = 500;
                     json error_res = {{"message", "删除配置失败: " + std::string(e.what())}};
@@ -951,7 +949,6 @@ namespace LSX_LIB {
              */
             void returnAllConfigs(Response &res) {
                 try {
-                    // 此处逻辑与 getAllConfigs 中的数据获取部分基本一致
                     auto result = db_.query("config", {"id", "key", "value"}, "", "id ASC", -1, -1);
                     json data = json::array();
                     for (const auto &row: result) {
@@ -962,15 +959,13 @@ namespace LSX_LIB {
                                 record["key"] = row[1];
                                 record["value"] = row[2];
                                 data.push_back(record);
-                            } catch (const std::exception &e_conv) {
-                                std::cerr << "错误 (returnAllConfigs - 转换行数据时, id: " << row[0] << "): "
-                                          << e_conv.what() << std::endl;
-                                // 可选：跳过此条错误记录
+                            } catch (const std::exception& e_conv) {
+                                std::cerr << "错误 (returnAllConfigs - 转换行数据时, id: " << row[0] << "): " << e_conv.what() << std::endl;
                             }
                         }
                     }
                     res.set_content(data.dump(4), "application/json; charset=utf-8");
-                } catch (const std::exception &e) {
+                } catch (const std::exception &e) { // 捕获SQLiteDB::query可能抛出的异常
                     std::cerr << "错误 (returnAllConfigs - 获取数据时): " << e.what() << std::endl;
                     res.status = 500;
                     json error_res = {{"message", "获取最新配置列表时发生内部错误: " + std::string(e.what())}};
@@ -979,10 +974,10 @@ namespace LSX_LIB {
             }
 
         private:
-            Server svr_;                         ///< httplib 的 HTTP 服务器实例。
-            LSX_LIB::SQL::SQLiteDB db_;          ///< SQLite 数据库操作实例。
-            int port_;                           ///< 服务器监听的端口号。
-            std::string baseDir_;                ///< 静态文件服务的基础目录。
+            Server svr_;                            ///< httplib 的 HTTP 服务器实例。
+            LSX_LIB::SQL::SQLiteDB db_;             ///< SQLite 数据库操作实例
+            int port_;                              ///< 服务器监听的端口号。
+            std::string baseDir_;                   ///< 静态文件服务的基础目录。
         }; // class ConfigServer 结束
     } // namespace Config 结束
 } // namespace LSX_LIB 结束
