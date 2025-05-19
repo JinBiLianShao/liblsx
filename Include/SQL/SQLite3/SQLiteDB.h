@@ -82,7 +82,7 @@
 #include <stdexcept>
 
 //添加命名空间，防止类冲突
-namespace LSX_LIB::SQLiteDB
+namespace LSX_LIB::SQL
 {
     /**
      * @class SQLiteDB
