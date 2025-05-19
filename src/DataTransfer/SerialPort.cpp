@@ -43,7 +43,7 @@ namespace LSX_LIB::DataTransfer
         // case 460800: return 460800;
         default:
             {
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                 std::cerr << "SerialPort::getPlatformBaudRate: Unsupported baud rate on Windows: " << baudRate <<
                     std::endl;
             }
@@ -85,7 +85,7 @@ namespace LSX_LIB::DataTransfer
         case 4000000: return B4000000;
         default:
             {
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                 std::cerr << "SerialPort::getPlatformBaudRate: Unsupported baud rate on POSIX: " << baudRate <<
                     std::endl;
             }
@@ -96,7 +96,7 @@ namespace LSX_LIB::DataTransfer
 
     bool SerialPort::create()
     {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
 #ifdef _WIN32
         // Windows 实现
@@ -115,12 +115,12 @@ namespace LSX_LIB::DataTransfer
             catch (const std::invalid_argument& ia)
             {
                 // 端口名不是 COMx 格式，忽略 stoi 错误
-                // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+                // LSX_LIB::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
                 // std::cerr << "SerialPort::create: Port name '" << portName << "' is not in COMx format. " << ia.what() << std::endl;
             } catch (const std::out_of_range& oor)
             {
                 // 端口号过大
-                LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
                 std::cerr << "SerialPort::create: Port number out of range for '" << portName << "'. " << oor.what() <<
                     std::endl;
                 return false;
@@ -138,7 +138,7 @@ namespace LSX_LIB::DataTransfer
 
         if (hComm == INVALID_HANDLE_VALUE)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::create: CreateFile failed for " << portName << ". Error: " << GetLastError() <<
                 std::endl;
             return false;
@@ -149,7 +149,7 @@ namespace LSX_LIB::DataTransfer
 
         if (!GetCommState(hComm, &dcbSerialParams))
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::create: GetCommState failed. Error: " << GetLastError() << std::endl;
             CloseHandle(hComm);
             hComm = INVALID_HANDLE_VALUE;
@@ -171,7 +171,7 @@ namespace LSX_LIB::DataTransfer
 
         if (!SetCommState(hComm, &dcbSerialParams))
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::create: SetCommState failed. Error: " << GetLastError() << std::endl;
             CloseHandle(hComm);
             hComm = INVALID_HANDLE_VALUE;
@@ -210,7 +210,7 @@ namespace LSX_LIB::DataTransfer
 
         if (!SetCommTimeouts(hComm, &timeouts))
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::create: SetCommTimeouts failed. Error: " << GetLastError() << std::endl;
             // 不一定是致命错误，但报告
         }
@@ -225,7 +225,7 @@ namespace LSX_LIB::DataTransfer
         fd = open(portName.c_str(), O_RDWR | O_NOCTTY); // 移除 O_NDELAY 实现阻塞模式
         if (fd < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::create: open failed for " << portName << ". Error: " << strerror(errno) <<
                 std::endl;
             return false;
@@ -234,7 +234,7 @@ namespace LSX_LIB::DataTransfer
         // 获取当前设置，以便关闭时恢复
         if (tcgetattr(fd, &oldtio) < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::create: tcgetattr failed. Error: " << strerror(errno) << std::endl;
             ::close(fd);
             fd = -1;
@@ -267,7 +267,7 @@ namespace LSX_LIB::DataTransfer
         tcflush(fd, TCIFLUSH); // 丢弃输入缓冲区中的数据
         if (tcsetattr(fd, TCSANOW, &newtio) < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::create: tcsetattr failed. Error: " << strerror(errno) << std::endl;
             ::close(fd);
             fd = -1;
@@ -280,12 +280,12 @@ namespace LSX_LIB::DataTransfer
 
     bool SerialPort::send(const uint8_t* data, size_t size)
     {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
 #ifdef _WIN32
         if (hComm == INVALID_HANDLE_VALUE)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::send: Port not created or closed." << std::endl;
             return false;
         }
@@ -314,13 +314,13 @@ namespace LSX_LIB::DataTransfer
                 // 处理 WriteFile 的超时错误
                 if (err == WAIT_TIMEOUT)
                 {
-                    // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+                    // LSX_LIB::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
                     // std::cerr << "SerialPort::send: WriteFile timed out." << std::endl;
                     // 超时后继续尝试发送剩余数据，除非总超时由 COMMTIMEOUTS 控制
                     // 这里根据 COMMTIMEOUTS 的 WriteTotalTimeout 来判断是否总超时
                     continue; // 理论上 WriteFile 在阻塞模式+TotalTimeout 下超时会返回 FALSE，此处可能需要更精细处理
                 }
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                 std::cerr << "SerialPort::send: WriteFile failed. Error: " << err << std::endl;
                 return false; // 写入失败
             }
@@ -328,7 +328,7 @@ namespace LSX_LIB::DataTransfer
             if (bytesWritten < bytesToWrite && bytesWritten > 0)
             {
                 // 写入不完整，但有部分写入，继续循环
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                 std::cerr << "SerialPort::send: Warning - WriteFile incomplete (" << bytesWritten << "/" << bytesToWrite
                     << "), continuing." << std::endl;
             }
@@ -337,7 +337,7 @@ namespace LSX_LIB::DataTransfer
                 // 请求写入但实际写入0字节，且无错误（可能由于 timeouts 配置）
                 // 在某些 timeout 配置下，WriteFile 可能会返回 TRUE 和 bytesWritten = 0 表示超时或无数据写入
                 // 这通常发生在 WriteTotalTimeoutConstant 和 WriteTotalTimeoutMultiplier 都很小或为0时
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                 std::cerr << "SerialPort::send: Warning - WriteFile wrote 0 bytes (" << bytesWritten << "/" <<
                     bytesToWrite << "), check timeouts." << std::endl;
                 // 这里可能需要根据超时配置决定是重试还是失败
@@ -350,7 +350,7 @@ namespace LSX_LIB::DataTransfer
 #else // POSIX
         if (fd < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::send: Port not created or closed." << std::endl;
             return false;
         }
@@ -375,12 +375,12 @@ namespace LSX_LIB::DataTransfer
                     // 在 VTIME/VMIN 配置下通常不会发生，除非 VTIME=0, VMIN=0
                     // 如果配置了阻塞模式（VTIME > 0 或 VMIN > 0），write 应该阻塞直到数据写入或发生错误
                     // 这里假设是阻塞模式，EAGAIN/EWOULDBLOCK 是意外情况，或需要更精细的非阻塞处理
-                    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                    LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                     std::cerr << "SerialPort::send: Warning - write returned EAGAIN/EWOULDBLOCK." << std::endl;
                     continue; // 重试
                 }
                 {
-                    LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                    LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                     std::cerr << "SerialPort::send: write failed. Error: " << strerror(errno) << std::endl;
                 }
                 return false; // 发生错误
@@ -388,7 +388,7 @@ namespace LSX_LIB::DataTransfer
             if (written == 0 && writeSize > 0)
             {
                 // 请求写入但实际写入0字节，可能是 VTIME/VMIN 配置导致的超时行为
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                 std::cerr << "SerialPort::send: Warning - write wrote 0 bytes (" << written << "/" << writeSize <<
                     "), check VTIME/VMIN or timeout." << std::endl;
                 // 在这里，写 0 字节可能意味着超时，我们假设是失败
@@ -404,12 +404,12 @@ namespace LSX_LIB::DataTransfer
     int SerialPort::receive(uint8_t* buffer, size_t size)
     {
         // 修改了函数签名
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
 #ifdef _WIN32
         if (hComm == INVALID_HANDLE_VALUE)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::receive: Port not created or closed." << std::endl;
             return -1; // 指示错误
         }
@@ -432,11 +432,11 @@ namespace LSX_LIB::DataTransfer
             // 处理 ReadFile 的超时错误 (通常返回 FALSE 和 GetLastError 是 WAIT_TIMEOUT)
             if (err == WAIT_TIMEOUT)
             {
-                // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+                // LSX_LIB::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
                 // std::cerr << "SerialPort::receive: ReadFile timed out." << std::endl; // 超时可能不是错误
                 return 0; // 将超时视为读取 0 字节
             }
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::receive: ReadFile failed. Error: " << err << std::endl;
             return -1; // 指示错误
         }
@@ -445,7 +445,7 @@ namespace LSX_LIB::DataTransfer
 #else // POSIX
         if (fd < 0)
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
             std::cerr << "SerialPort::receive: Port not created or closed." << std::endl;
             return -1; // 指示错误
         }
@@ -460,12 +460,12 @@ namespace LSX_LIB::DataTransfer
             // 处理非阻塞 (EAGAIN/EWOULDBLOCK) 或其他错误
             if (errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                // LIBLSX::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
+                // LSX_LIB::LockManager::LockGuard<std::mutex> lock(g_error_mutex);
                 // std::cerr << "SerialPort::receive: read returned EAGAIN/EWOULDBLOCK." << std::endl; // 非阻塞模式下当前无数据
                 return 0; // 将无可读数据或超时视为读取 0 字节
             }
             {
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
                 std::cerr << "SerialPort::receive: read failed. Error: " << strerror(errno) << std::endl;
             }
             return -1; // 指示错误
@@ -477,7 +477,7 @@ namespace LSX_LIB::DataTransfer
 
     void SerialPort::close()
     {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
 #ifdef _WIN32
         if (hComm != INVALID_HANDLE_VALUE)
@@ -511,13 +511,13 @@ namespace LSX_LIB::DataTransfer
 
     bool SerialPort::setSendTimeout(int timeout_ms)
     {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
         // 串口的超时通常通过 VTIME/VMIN (POSIX) 或 COMMTIMEOUTS (Windows) 配置，
         // 直接映射到 ICommunication 的通用毫秒超时比较复杂，且行为可能不完全一致。
         // 例如，POSIX 的 VTIME 单位是 0.1 秒，且范围有限 (0-255)。
         // Windows 的 COMMTIMEOUTS 更灵活，但需要精确配置 ReadTotalTimeoutConstant/Multiplier 等。
         // 此处仅提供接口，具体实现需要根据所需的串口超时行为来完成。
-        LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
         std::cerr <<
             "SerialPort::setSendTimeout: Generic timeout setting may not be fully supported or configured via VTIME/VMIN/COMMTIMEOUTS."
             << std::endl;
@@ -545,9 +545,9 @@ namespace LSX_LIB::DataTransfer
 
     bool SerialPort::setReceiveTimeout(int timeout_ms)
     {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
         // 串口的超时配置同上
-        LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
         std::cerr <<
             "SerialPort::setReceiveTimeout: Generic timeout setting may not be fully supported or configured via VTIME/VMIN/COMMTIMEOUTS."
             << std::endl;

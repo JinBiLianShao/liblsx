@@ -39,7 +39,7 @@ namespace LSX_LIB::DataTransfer
         // 基类的 create 成功后，sockfd 已经有效
         // setsockopt 调用需要保护，因为多个线程可能创建 UdpBroadcast 对象
         // 继承的 protected 成员可以直接访问
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁 (mtx 已改为 protected)
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁 (mtx 已改为 protected)
 
         // 设置 SO_BROADCAST 选项
         int opt = 1;
@@ -47,10 +47,10 @@ namespace LSX_LIB::DataTransfer
                        reinterpret_cast<const char*>(&opt), sizeof(opt)) < 0)
         {
 #ifdef _WIN32
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
                 std::cerr << "UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << WSAGetLastError() << std::endl;
 #else
-            LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << strerror(errno) <<
                 std::endl;
 #endif

@@ -49,9 +49,9 @@ namespace LSX_LIB::DataTransfer
             break;
         default:
             {
-                // 使用 LIBLSX::LockManager::LockGuard 保护全局错误输出
+                // 使用 LSX_LIB::LockManager::LockGuard 保护全局错误输出
                 // LockGuard 构造时锁定 g_error_mutex，离开作用域时自动解锁
-                LIBLSX::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
+                LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
                 std::cerr << "CommunicationFactory::create: Unsupported CommType." << std::endl;
             }
             break;
