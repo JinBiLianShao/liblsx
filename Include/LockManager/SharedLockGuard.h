@@ -151,7 +151,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX {
+namespace LSX_LIB {
     /**
      * @brief 锁管理相关的命名空间。
      * 包含锁和同步原语的封装。

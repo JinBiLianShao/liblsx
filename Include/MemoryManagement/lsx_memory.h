@@ -26,16 +26,16 @@
  *
  * int main() {
  * // 使用 Buffer 类
- * LIB_LSX::Memory::Buffer buffer(100);
+ * LSX_LIB::Memory::Buffer buffer(100);
  * std::cout << "Buffer size: " << buffer.GetSize() << std::endl;
  *
  * // 使用 FIFO 队列
- * LIB_LSX::Memory::FIFO<int> int_fifo;
+ * LSX_LIB::Memory::FIFO<int> int_fifo;
  * int_fifo.Put(10);
  * std::cout << "FIFO size: " << int_fifo.Size() << std::endl;
  *
  * // 使用 FixedSizeQueue
- * LIB_LSX::Memory::FixedSizeQueue byte_queue(10, 5);
+ * LSX_LIB::Memory::FixedSizeQueue byte_queue(10, 5);
  * std::vector<uint8_t> data = {1, 2, 3};
  * if (byte_queue.Put(data)) {
  * std::cout << "FixedSizeQueue size: " << byte_queue.Size() << std::endl;
@@ -52,12 +52,12 @@
  * - 包含此头文件会引入所有内存模块的依赖。如果只需要其中部分功能，建议直接包含所需的具体头文件。
  */
 
-#ifndef LIB_LSX_MEMORY_LSX_MEMORY_H
-#define LIB_LSX_MEMORY_LSX_MEMORY_H
+#ifndef LSX_LIB_MEMORY_LSX_MEMORY_H
+#define LSX_LIB_MEMORY_LSX_MEMORY_H
 #pragma once
 // 包含全局错误锁头文件
 #include "GlobalErrorMutex.h"
-// 包含 LIBLSX::LockManager::LockGuard 头文件
+// 包含 LSX_LIB::LockManager::LockGuard 头文件
 #include "LockGuard.h"
 // 主头文件，包含所有内存模块的头文件
 
@@ -72,4 +72,4 @@
 #include "SharedMemory.h" // 共享内存
 
 
-#endif // LIB_LSX_MEMORY_LSX_MEMORY_H
+#endif // LSX_LIB_MEMORY_LSX_MEMORY_H

@@ -1,7 +1,7 @@
 /**
  * @file Buffer.h
  * @brief 通用内存缓冲区类
- * @details 定义了 LIB_LSX::Memory 命名空间下的 Buffer 类，
+ * @details 定义了 LSX_LIB::Memory 命名空间下的 Buffer 类，
  * 用于实现一个通用的、基于 std::vector<uint8_t> 的内存缓冲区。
  * 提供缓冲区的大小管理、数据填充、以及在指定偏移量进行读写操作的功能。
  * 类内部使用 std::mutex 来保证在多线程环境下的线程安全访问。
@@ -29,7 +29,7 @@
  * #include <chrono>
  *
  * // 示例：多线程访问 Buffer
- * LIB_LSX::Memory::Buffer shared_buffer(100); // 创建一个大小为 100 的缓冲区
+ * LSX_LIB::Memory::Buffer shared_buffer(100); // 创建一个大小为 100 的缓冲区
  *
  * void writer_thread(int id) {
  * const uint8_t data_to_write[] = { static_cast<uint8_t>('A' + id), static_cast<uint8_t>('a' + id) };
@@ -98,12 +98,12 @@
  * - **数据复制**: `WriteAt` 和 `ReadAt` 方法涉及数据的复制。对于大量数据的传输，可能需要考虑更高效的方式（例如，直接操作指针，但需用户自行管理同步）。
  */
 
-#ifndef LIB_LSX_MEMORY_BUFFER_H
-#define LIB_LSX_MEMORY_BUFFER_H
+#ifndef LSX_LIB_MEMORY_BUFFER_H
+#define LSX_LIB_MEMORY_BUFFER_H
 #pragma once
 // 包含全局错误锁头文件
 #include "GlobalErrorMutex.h"
-// 包含 LIBLSX::LockManager::LockGuard 头文件
+// 包含 LSX_LIB::LockManager::LockGuard 头文件
 #include "LockGuard.h"
 #include <vector> // For std::vector
 #include <cstdint> // For uint8_t
@@ -115,7 +115,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-    namespace LIB_LSX::Memory {
+    namespace LSX_LIB::Memory {
 
         /**
          * @brief 通用内存缓冲区类。
@@ -300,7 +300,7 @@
             size_t Capacity() const;
         };
 
-    } // namespace LIB_LSX::Memory
+    } // namespace LSX_LIB::Memory
 
 
-#endif // LIB_LSX_MEMORY_BUFFER_H
+#endif // LSX_LIB_MEMORY_BUFFER_H

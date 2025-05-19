@@ -54,7 +54,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX::Memory {
+namespace LSX_LIB::Memory {
 /**
  * @class BRAMMapper
  * @brief 提供对物理内存区域的映射及读写操作。

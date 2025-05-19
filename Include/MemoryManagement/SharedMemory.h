@@ -1,7 +1,7 @@
 /**
  * @file SharedMemory.h
  * @brief 进程间共享内存管理类
- * @details 定义了 LIB_LSX::Memory 命名空间下的 SharedMemory 类，
+ * @details 定义了 LSX_LIB::Memory 命名空间下的 SharedMemory 类，
  * 用于实现跨平台的进程间共享内存的管理。
  * 该类封装了 Windows 和 POSIX (Linux/macOS) 系统下共享内存操作的底层细节，
  * 提供统一的接口进行共享内存段的创建、打开、附加（映射）、分离（解除映射）和销毁。
@@ -38,7 +38,7 @@
  * const std::string shm_name = "MySharedMemorySegment";
  * const size_t shm_size = 1024;
  *
- * LIB_LSX::Memory::SharedMemory shm_a;
+ * LSX_LIB::Memory::SharedMemory shm_a;
  *
  * std::cout << "[Process A] Attempting to create shared memory: " << shm_name << " with size " << shm_size << std::endl;
  * if (shm_a.Create(shm_name, shm_size)) {
@@ -80,7 +80,7 @@
  * const std::string shm_name = "MySharedMemorySegment";
  * const size_t shm_size = 1024; // 附加时也需要知道大小 (至少是创建时的大小)
  *
- * LIB_LSX::Memory::SharedMemory shm_b;
+ * LSX_LIB::Memory::SharedMemory shm_b;
  *
  * std::cout << "[Process B] Attempting to open shared memory: " << shm_name << " with size " << shm_size << std::endl;
  * // 尝试附加，可能需要等待进程 A 创建
@@ -147,8 +147,8 @@
  * - **拷贝/移动**: 类禁用了拷贝和赋值，因为管理 OS 资源的所有权和生命周期在拷贝时非常复杂且容易出错。移动语义通常是可能的，但需要仔细实现以安全转移 OS 句柄/标识符和所有权标志。
  */
 
-#ifndef LIB_LSX_MEMORY_SHARED_MEMORY_H
-#define LIB_LSX_MEMORY_SHARED_MEMORY_H
+#ifndef LSX_LIB_MEMORY_SHARED_MEMORY_H
+#define LSX_LIB_MEMORY_SHARED_MEMORY_H
 #pragma once
 // 包含全局错误锁头文件
 #include "GlobalErrorMutex.h"
@@ -173,7 +173,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX {
+namespace LSX_LIB {
     /**
      * @brief 内存管理相关的命名空间。
      * 包含内存缓冲区和相关工具。
@@ -413,6 +413,6 @@ namespace LIB_LSX {
         };
 
     } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB
 
-#endif // LIB_LSX_MEMORY_SHARED_MEMORY_H
+#endif // LSX_LIB_MEMORY_SHARED_MEMORY_H

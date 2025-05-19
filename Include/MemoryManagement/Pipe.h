@@ -1,7 +1,7 @@
 /**
  * @file Pipe.h
  * @brief 管道类 (模板)
- * @details 定义了 LIB_LSX::Memory 命名空间下的 Pipe 类，
+ * @details 定义了 LSX_LIB::Memory 命名空间下的 Pipe 类，
  * 用于实现一个线程安全的、基于 std::deque 的数据传输管道，通常用于字节流（可变长度）。
  * 提供非阻塞和阻塞（带超时）的数据写入（Write/Put）和读取（Read/Get）操作。
  * 类内部使用 std::mutex 和 std::condition_variable 来保证在多线程环境下的线程安全访问和同步。
@@ -32,7 +32,7 @@
  * #include <chrono>
  *
  * // 创建一个 Pipe 实例
- * LIB_LSX::Memory::Pipe byte_pipe;
+ * LSX_LIB::Memory::Pipe byte_pipe;
  *
  * // 写入者线程
  * void writer(int id) {
@@ -110,8 +110,8 @@
  * - **拷贝/移动**: 类禁用了拷贝构造和赋值，因为直接拷贝一个包含线程同步原语（mutex, condition_variable）和状态的管道通常是不安全或没有意义的。如果需要传递管道对象，应考虑使用智能指针（如 `std::shared_ptr`）。移动语义未默认启用，如果需要，需要手动实现以安全转移资源和状态。
  */
 
-#ifndef LIB_LSX_MEMORY_PIPE_H
-#define LIB_LSX_MEMORY_PIPE_H
+#ifndef LSX_LIB_MEMORY_PIPE_H
+#define LSX_LIB_MEMORY_PIPE_H
 #pragma once
 // 包含全局错误锁头文件
 #include "GlobalErrorMutex.h"
@@ -131,7 +131,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX {
+namespace LSX_LIB {
     /**
      * @brief 内存管理相关的命名空间。
      * 包含内存缓冲区和相关工具。
@@ -393,6 +393,6 @@ namespace LIB_LSX {
         };
 
     } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB
 
-#endif // LIB_LSX_MEMORY_PIPE_H
+#endif // LSX_LIB_MEMORY_PIPE_H

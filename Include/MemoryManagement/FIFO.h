@@ -1,7 +1,7 @@
 /**
  * @file FIFO.h
  * @brief 先进先出队列类 (模板)
- * @details 定义了 LIB_LSX::Memory 命名空间下的 FIFO 类，
+ * @details 定义了 LSX_LIB::Memory 命名空间下的 FIFO 类，
  * 这是一个模板类，用于实现一个线程安全的、基于 std::queue 的先进先出队列。
  * 提供非阻塞的数据放入（Push/Put）和取出（Pop/Get）操作。
  * 类内部使用 std::mutex 来保证在多线程环境下的线程安全访问。
@@ -33,7 +33,7 @@
  * #include <optional>
  *
  * // 创建一个存储字符串的 FIFO 队列
- * LIB_LSX::Memory::FIFO<std::string> string_queue;
+ * LSX_LIB::Memory::FIFO<std::string> string_queue;
  *
  * // 生产者线程
  * void string_producer(int id) {
@@ -101,12 +101,12 @@
  * - **拷贝/移动**: 类禁用了拷贝构造和赋值，因为直接拷贝一个包含线程同步原语（mutex）和状态的队列通常是不安全或没有意义的。如果需要传递队列对象，应考虑使用智能指针（如 `std::shared_ptr`）。移动语义未默认启用，如果需要，可以手动实现。
  */
 
-#ifndef LIB_LSX_MEMORY_FIFO_H
-#define LIB_LSX_MEMORY_FIFO_H
+#ifndef LSX_LIB_MEMORY_FIFO_H
+#define LSX_LIB_MEMORY_FIFO_H
 #pragma once
 // 包含全局错误锁头文件
 #include "GlobalErrorMutex.h"
-// 包含 LIBLSX::LockManager::LockGuard 头文件
+// 包含 LSX_LIB::LockManager::LockGuard 头文件
 #include "LockGuard.h"
 #include <queue> // For std::queue
 #include <optional> // For std::optional (C++17)
@@ -119,7 +119,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX {
+namespace LSX_LIB {
     /**
      * @brief 内存管理相关的命名空间。
      * 包含内存缓冲区和相关工具。
@@ -301,6 +301,6 @@ namespace LIB_LSX {
         };
 
     } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB
 
-#endif // LIB_LSX_MEMORY_FIFO_H
+#endif // LSX_LIB_MEMORY_FIFO_H

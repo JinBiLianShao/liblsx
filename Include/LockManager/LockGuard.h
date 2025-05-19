@@ -138,7 +138,7 @@
      * @brief 锁管理相关的命名空间。
      * 包含锁和同步原语的封装。
      */
-    namespace LIB_LSX::LockManager {
+    namespace LSX_LIB::LockManager {
 
         /**
          * @brief 锁守卫类 (模板)。

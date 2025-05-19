@@ -34,7 +34,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX::Memory {
+namespace LSX_LIB::Memory {
 /**
  * @class RegisterAccess
  * @brief 用于读写寄存器地址的类。

@@ -1,7 +1,7 @@
 /**
  * @file CircularQueue.h
  * @brief 循环队列类 (模板)
- * @details 定义了 LIB_LSX::Memory 命名空间下的 CircularQueue 类，
+ * @details 定义了 LSX_LIB::Memory 命名空间下的 CircularQueue 类，
  * 这是一个模板类，用于实现一个线程安全的、固定可用容量的循环队列。
  * 队列基于一个内部的 std::vector，利用头部和尾部索引实现循环存储。
  * 提供非阻塞的数据放入（Enqueue/Put）和取出（Dequeue/Get）操作，
@@ -32,7 +32,7 @@
  * #include <chrono>
  *
  * // 创建一个可用容量为 5 的整数循环队列
- * LIB_LSX::Memory::CircularQueue<int> int_queue(5);
+ * LSX_LIB::Memory::CircularQueue<int> int_queue(5);
  *
  * // 生产者线程
  * void int_producer(int id) {
@@ -105,12 +105,12 @@
  * - **底层实现细节**: 底层 vector 的大小比可用容量大 1 是循环队列的标准实现技巧，用于区分队列满和空的状态。
  */
 
-#ifndef LIB_LSX_MEMORY_CIRCULAR_QUEUE_H
-#define LIB_LSX_MEMORY_CIRCULAR_QUEUE_H
+#ifndef LSX_LIB_MEMORY_CIRCULAR_QUEUE_H
+#define LSX_LIB_MEMORY_CIRCULAR_QUEUE_H
 #pragma once
 // 包含全局错误锁头文件
 #include "GlobalErrorMutex.h"
-// 包含 LIBLSX::LockManager::LockGuard 头文件
+// 包含 LSX_LIB::LockManager::LockGuard 头文件
 #include "LockGuard.h"
 #include <vector> // For std::vector
 #include <optional> // For std::optional (C++17)
@@ -125,7 +125,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX {
+namespace LSX_LIB {
     /**
      * @brief 内存管理相关的命名空间。
      * 包含内存缓冲区和相关工具。
@@ -369,6 +369,6 @@ namespace LIB_LSX {
         };
 
     } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB
 
-#endif // LIB_LSX_MEMORY_CIRCULAR_QUEUE_H
+#endif // LSX_LIB_MEMORY_CIRCULAR_QUEUE_H

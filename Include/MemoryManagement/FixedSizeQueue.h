@@ -1,7 +1,7 @@
 /**
  * @file FixedSizeQueue.h
  * @brief 固定大小内存块队列类
- * @details 定义了 LIB_LSX::Memory 命名空间下的 FixedSizeQueue 类，
+ * @details 定义了 LSX_LIB::Memory 命名空间下的 FixedSizeQueue 类，
  * 用于实现一个线程安全的、存储固定大小内存块的 FIFO 队列。
  * 该队列基于一个内部的 std::vector 缓冲区，并使用头部和尾部索引来管理块的存取。
  * 提供非阻塞和阻塞（带超时）的数据放入（Put）和取出（Get）操作，
@@ -33,7 +33,7 @@
  * #include <optional>
  *
  * // 创建一个块大小为 20 字节，总共 8 个块的队列
- * LIB_LSX::Memory::FixedSizeQueue queue(20, 8);
+ * LSX_LIB::Memory::FixedSizeQueue queue(20, 8);
  *
  * // 生产者线程
  * void producer(int id) {
@@ -110,12 +110,12 @@
  * - **拷贝/移动**: 类禁用了拷贝构造和赋值，因为直接拷贝一个包含线程同步原语（mutex, condition_variable）和状态（head, tail, size）的队列通常是不安全或没有意义的。如果需要传递队列对象，应考虑使用智能指针（如 `std::shared_ptr`）。移动语义未默认实现，如果需要，需要手动实现以安全转移资源和状态。
  */
 
-#ifndef LIB_LSX_MEMORY_FIXED_SIZE_QUEUE_H
-#define LIB_LSX_MEMORY_FIXED_SIZE_QUEUE_H
+#ifndef LSX_LIB_MEMORY_FIXED_SIZE_QUEUE_H
+#define LSX_LIB_MEMORY_FIXED_SIZE_QUEUE_H
 #pragma once
 // 包含全局错误锁头文件
 #include "GlobalErrorMutex.h"
-// 包含 LIBLSX::LockManager::LockGuard 头文件
+// 包含 LSX_LIB::LockManager::LockGuard 头文件
 #include "LockGuard.h"
 #include <vector> // For std::vector
 #include <cstdint> // For uint8_t
@@ -132,7 +132,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX {
+namespace LSX_LIB {
     /**
      * @brief 内存管理相关的命名空间。
      * 包含内存缓冲区和相关工具。
@@ -430,6 +430,6 @@ namespace LIB_LSX {
         };
 
     } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB
 
-#endif // LIB_LSX_MEMORY_FIXED_SIZE_QUEUE_H
+#endif // LSX_LIB_MEMORY_FIXED_SIZE_QUEUE_H
