@@ -8,8 +8,7 @@
 #include "MultiLockGuard.h"
 
 
-namespace LIB_LSX {
-namespace Memory {
+namespace LSX_LIB::Memory {
 
 Buffer::Buffer() {
     // std::cout << "Buffer: Created empty buffer." << std::endl; // Use logging
@@ -147,6 +146,4 @@ size_t Buffer::Capacity() const {
      return data_vector_.size();
 }
 
-
-} // namespace Memory
-} // namespace LIB_LSX
+}

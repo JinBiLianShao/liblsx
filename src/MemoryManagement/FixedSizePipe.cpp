@@ -12,7 +12,7 @@
 #include "MultiLockGuard.h"
 
 
-namespace LIB_LSX {
+namespace LSX_LIB {
 namespace Memory {
 
 // Helper implementations (can be private members or free functions if in same cpp)
@@ -320,4 +320,4 @@ size_t FixedSizePipe::Size() const {
 }
 
 } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB

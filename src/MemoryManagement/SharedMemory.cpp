@@ -20,7 +20,7 @@
 #endif
 
 
-namespace LIB_LSX {
+namespace LSX_LIB {
 namespace Memory {
 
 SharedMemory::SharedMemory() {
@@ -428,4 +428,4 @@ bool SharedMemory::IsOwner() const {
 
 
 } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB

@@ -12,7 +12,7 @@
 #include "MultiLockGuard.h"
 
 
-namespace LIB_LSX
+namespace LSX_LIB
 {
     namespace Memory
     {
@@ -388,4 +388,4 @@ namespace LIB_LSX
             return current_size_;
         }
     } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB

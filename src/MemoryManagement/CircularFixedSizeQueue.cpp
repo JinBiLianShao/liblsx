@@ -10,7 +10,7 @@
 
 #include "LockGuard.h"  // LSX_LIB::LockManager::LockGuard
 
-namespace LIB_LSX {
+namespace LSX_LIB {
 namespace Memory {
 
 // --- helper (assumes外部已锁定) ---
@@ -195,4 +195,4 @@ size_t CircularFixedSizeQueue::Size() const {
 }
 
 } // namespace Memory
-} // namespace LIB_LSX
+} // namespace LSX_LIB
