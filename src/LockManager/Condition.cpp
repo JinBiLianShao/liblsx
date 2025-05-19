@@ -1,4 +1,3 @@
-#pragma once
 #include "Condition.h"
 
 namespace LIBLSX {

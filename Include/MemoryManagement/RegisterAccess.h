@@ -26,7 +26,7 @@
 
 #ifndef KKTRAFFIC_REGISTERACCESS_H
 #define KKTRAFFIC_REGISTERACCESS_H
-
+#pragma once
 #include <iostream>
 #include <cstdio>
 #include <string>

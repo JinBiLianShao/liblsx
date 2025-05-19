@@ -1,4 +1,3 @@
-#pragma once
 #include "Buffer.h"
 
 #include <cstring>

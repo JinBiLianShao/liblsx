@@ -43,7 +43,7 @@
 
 #ifndef BRAM_MAPPER_H
 #define BRAM_MAPPER_H
-
+#pragma once
 #include <iostream>
 #include <fcntl.h>
 #include <unistd.h>
