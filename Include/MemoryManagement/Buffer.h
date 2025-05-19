@@ -115,12 +115,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIB_LSX {
-    /**
-     * @brief 内存管理相关的命名空间。
-     * 包含内存缓冲区和相关工具。
-     */
-    namespace Memory {
+    namespace LIB_LSX::Memory {
 
         /**
          * @brief 通用内存缓冲区类。
@@ -305,7 +300,7 @@ namespace LIB_LSX {
             size_t Capacity() const;
         };
 
-    } // namespace Memory
-} // namespace LIB_LSX
+    } // namespace LIB_LSX::Memory
+
 
 #endif // LIB_LSX_MEMORY_BUFFER_H

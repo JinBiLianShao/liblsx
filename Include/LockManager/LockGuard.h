@@ -147,7 +147,7 @@ namespace LIBLSX {
          * 可与任何满足 BasicLockable 要求的互斥量类型配合使用。
          * @tparam MutexType 满足 BasicLockable 要求的互斥量类型。
          */
-        template <typename MutexType>
+        template<typename MutexType>
         class LockGuard {
         public:
             /**
@@ -157,8 +157,8 @@ namespace LIBLSX {
              *
              * @param m 要锁定的互斥量。
              */
-            explicit LockGuard(MutexType& m)
-                : lock_(m) {}
+            explicit LockGuard(MutexType &m)
+                    : lock_(m) {}
 
             /**
              * @brief 构造函数（延迟锁定）。
@@ -168,19 +168,20 @@ namespace LIBLSX {
              * @param m 要管理的互斥量。
              * @param tag `std::defer_lock` 标签，指示延迟锁定。
              */
-            LockGuard(MutexType& m, std::defer_lock_t) noexcept
-                : lock_(m, std::defer_lock) {}
+            LockGuard(MutexType &m, std::defer_lock_t) noexcept
+                    : lock_(m, std::defer_lock) {}
 
             /**
              * @brief 禁用拷贝构造函数。
              * LockGuard 对象管理锁的所有权，不可拷贝。
              */
-            LockGuard(const LockGuard&) = delete;
+            LockGuard(const LockGuard &) = delete;
+
             /**
              * @brief 禁用赋值运算符。
              * LockGuard 对象管理锁的所有权，不可赋值。
              */
-            LockGuard& operator=(const LockGuard&) = delete;
+            LockGuard &operator=(const LockGuard &) = delete;
 
             /**
              * @brief 析构函数。
@@ -210,8 +211,8 @@ namespace LIBLSX {
              * @param timeout 最大等待时间。
              * @return 如果成功获取锁，返回 true；如果超时或未能获取锁，返回 false。
              */
-            template <typename Rep, typename Period>
-            bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) {
+            template<typename Rep, typename Period>
+            bool try_lock_for(const std::chrono::duration<Rep, Period> &timeout) {
                 // 使用 if constexpr 在编译时根据 MutexType 选择不同的行为
                 if constexpr (std::is_same_v<MutexType, std::timed_mutex> ||
                               std::is_same_v<MutexType, std::recursive_timed_mutex>) {

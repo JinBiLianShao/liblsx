@@ -28,22 +28,24 @@ project(${PROJECT_NAME})
 
 #7045
 #set(CMAKE_HOST_SYSTEM_NAME Linux)
-#set(CMAKE_C_COMPILER "/usr/bin/arm-linux-gnueabihf-gcc-6")
-#set(CMAKE_CXX_COMPILER "/usr/bin/arm-linux-gnueabihf-g++-6")
+set(CMAKE_C_COMPILER "/usr/bin/arm-linux-gnueabihf-gcc-7")
+set(CMAKE_CXX_COMPILER "/usr/bin/arm-linux-gnueabihf-g++-7")
 #set(CMAKE_C_COMPILER "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc")
 #set(CMAKE_CXX_COMPILER "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-g++")
 #set(CMAKE_CXX_LINK_EXECUTABLE "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-ld")
 
 
-LINK_DIRECTORIES(.)
+#LINK_DIRECTORIES(./Include/SQL/SQLite3/sqlite3-x86) #x86 sqlite3
+LINK_DIRECTORIES(./Include/SQL/SQLite3/sqlite3-arm32) #arm32 sqlite3
+#LINK_DIRECTORIES(./Include/SQL/SQLite3/sqlite3-arm64) #arm64 sqlite3
 
 # 自动查找所有源文件并添加到目标
 file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/*.cpp" "${CMAKE_SOURCE_DIR}/*.c" "${CMAKE_SOURCE_DIR}/*.cc")
 # 手动排除构建目录中的生成文件
 list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_BINARY_DIR}")
 add_library(${PROJECT_NAME}
-        STATIC  #静态库
-        #SHARED #动态库
+        #STATIC  #静态库
+        SHARED #动态库
         ${SOURCES})
 #add_executable(${PROJECT_NAME} ${SOURCES})
 
