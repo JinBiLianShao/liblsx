@@ -67,7 +67,7 @@ namespace LIB_LSX
 
         void FixedSizeQueue::Clear()
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
             head_ = 0;
             tail_ = 0;
             current_size_ = 0;
@@ -83,7 +83,7 @@ namespace LIB_LSX
                 // std::cerr << "FixedSizeQueue: Put failed. Invalid data or size mismatch." << std::endl;
                 return false;
             }
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
 
             if (current_size_ == block_count_)
             {
@@ -117,7 +117,7 @@ namespace LIB_LSX
                 // std::cerr << "FixedSizeQueue: Get failed. Invalid buffer or size too small." << std::endl;
                 return false;
             }
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
 
             if (current_size_ == 0)
             {
@@ -140,7 +140,7 @@ namespace LIB_LSX
 
         std::optional<std::vector<uint8_t>> FixedSizeQueue::Get()
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
             if (current_size_ == 0)
             {
                 // IsEmpty_unsafe()
@@ -168,7 +168,7 @@ namespace LIB_LSX
                 // std::cerr << "FixedSizeQueue: Peek failed. Invalid buffer or size too small." << std::endl;
                 return false;
             }
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
 
             if (current_size_ == 0)
             {
@@ -186,7 +186,7 @@ namespace LIB_LSX
 
         std::optional<std::vector<uint8_t>> FixedSizeQueue::Peek() const
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
             if (current_size_ == 0)
             {
                 // IsEmpty_unsafe()
@@ -372,19 +372,19 @@ namespace LIB_LSX
 
         bool FixedSizeQueue::IsEmpty() const
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
             return current_size_ == 0;
         }
 
         bool FixedSizeQueue::IsFull() const
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
             return current_size_ == block_count_;
         }
 
         size_t FixedSizeQueue::Size() const
         {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
             return current_size_;
         }
     } // namespace Memory

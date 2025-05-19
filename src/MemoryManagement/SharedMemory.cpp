@@ -38,7 +38,7 @@ SharedMemory::~SharedMemory() {
 }
 
 bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state during creation
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state during creation
 
     if (size == 0) {
         std::cerr << "SharedMemory: Create failed. Size must be greater than 0." << std::endl;
@@ -140,7 +140,7 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
 
 
 bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
-     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
+     LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
 
      if (size == 0) {
          std::cerr << "SharedMemory: Open failed. Size must be greater than 0." << std::endl;
@@ -261,7 +261,7 @@ void SharedMemory::Detach() {// Protect instance state
 }
 
 bool SharedMemory::Destroy() {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
 
     if (!is_owner_) { // Check locked by lock_guard
          // std::cout << "SharedMemory: Not owner, cannot destroy." << std::endl; // Use logging
@@ -328,7 +328,7 @@ size_t SharedMemory::Write(size_t offset, const uint8_t* data, size_t size) {
     if (data == nullptr || size == 0) {
         return 0;
     }
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
 
     if (!IsAttached()) { // Check locked by lock_guard
          // std::cerr << "SharedMemory: Write failed. Not attached." << std::endl; // Use logging
@@ -358,7 +358,7 @@ size_t SharedMemory::Read(size_t offset, uint8_t* buffer, size_t size) const {
     if (buffer == nullptr || size == 0) {
         return 0;
     }
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to shared memory pointer and size_
 
     if (!IsAttached()) { // Check locked by lock_guard
          // std::cerr << "SharedMemory: Read failed. Not attached." << std::endl; // Use logging
@@ -388,7 +388,7 @@ std::vector<uint8_t> SharedMemory::Read(size_t offset, size_t size) const {
 
 
 size_t SharedMemory::GetSize() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to size_
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to size_
     return size_; // Returns the size this instance was created/opened with
     // A more robust POSIX implementation would use shmctl(IPC_STAT) to get the *actual* size.
 }
@@ -402,7 +402,7 @@ bool SharedMemory::IsAttached() const {
 }
 
 bool SharedMemory::IsOwner() const {
-     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to is_owner_
+     LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect access to is_owner_
     return is_owner_;
 }
 

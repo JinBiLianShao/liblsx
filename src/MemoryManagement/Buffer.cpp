@@ -18,7 +18,7 @@ Buffer::Buffer() {
 Buffer::Buffer(size_t size) {
     if (size > 0) {
         try {
-            LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+            LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
             data_vector_.resize(size);
             // std::cout << "Buffer: Allocated buffer of size " << size << std::endl; // Use logging
         } catch (const std::bad_alloc& e) {
@@ -33,7 +33,7 @@ Buffer::Buffer(size_t size) {
 
 bool Buffer::Resize(size_t new_size) {
     try {
-        LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
         data_vector_.resize(new_size);
         // std::cout << "Buffer: Resized buffer to " << new_size << std::endl; // Use logging
         return true;
@@ -49,7 +49,7 @@ void Buffer::Clear() {
 }
 
 void Buffer::Fill(uint8_t value) {
-     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+     LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
     if (!data_vector_.empty()) {
         std::fill(data_vector_.begin(), data_vector_.end(), value);
         // std::cout << "Buffer: Filled buffer with value " << (int)value << std::endl; // Use logging
@@ -62,7 +62,7 @@ uint8_t* Buffer::GetData() {
     // concurrent with Resize. The WriteAt/ReadAt methods provide synchronized access.
     // If a user gets the pointer and accesses it without calling WriteAt/ReadAt,
     // they need external synchronization or must ensure no concurrent Resize occurs.
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
     if (data_vector_.empty()) {
         return nullptr;
     }
@@ -70,7 +70,7 @@ uint8_t* Buffer::GetData() {
 }
 
 const uint8_t* Buffer::GetData() const {
-     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+     LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
     if (data_vector_.empty()) {
         return nullptr;
     }
@@ -81,7 +81,7 @@ size_t Buffer::WriteAt(size_t offset, const uint8_t* data, size_t size) {
      if (data == nullptr || size == 0) {
          return 0;
      }
-     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect data_vector_ and its data pointer
+     LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect data_vector_ and its data pointer
 
      if (offset >= data_vector_.size()) {
          // std::cerr << "Buffer: WriteAt failed. Offset " << offset << " is out of bounds (size " << data_vector_.size() << ")." << std::endl; // Use logging
@@ -106,7 +106,7 @@ size_t Buffer::ReadAt(size_t offset, uint8_t* buffer, size_t size) const {
     if (buffer == nullptr || size == 0) {
         return 0;
     }
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect data_vector_ and its data pointer
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect data_vector_ and its data pointer
 
     if (offset >= data_vector_.size()) {
         // std::cerr << "Buffer: ReadAt failed. Offset " << offset << " is out of bounds (size " << data_vector_.size() << ")." << std::endl; // Use logging
@@ -131,17 +131,17 @@ std::vector<uint8_t> Buffer::ReadAt(size_t offset, size_t size) const {
 
 
 size_t Buffer::GetSize() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
     return data_vector_.size();
 }
 
 bool Buffer::IsEmpty() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
     return data_vector_.empty();
 }
 
 size_t Buffer::Capacity() const {
-     LIBLSX::LockManager::LockGuard<std::mutex> lock(mutex_);
+     LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_);
      // For std::vector based buffer, capacity is size unless reserved
      // Returning size is fine here as it represents the usable space managed by this class
      return data_vector_.size();

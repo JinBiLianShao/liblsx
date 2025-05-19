@@ -1,6 +1,6 @@
 #include "Condition.h"
 
-namespace LIBLSX {
+namespace LSX_LIB {
     namespace LockManager {
 
         // notify_one 的实现

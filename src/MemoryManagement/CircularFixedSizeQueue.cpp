@@ -8,7 +8,7 @@
 #include <optional>
 #include <stdexcept>
 
-#include "LockGuard.h"  // LIBLSX::LockManager::LockGuard
+#include "LockGuard.h"  // LSX_LIB::LockManager::LockGuard
 
 namespace LIB_LSX {
 namespace Memory {
@@ -49,7 +49,7 @@ CircularFixedSizeQueue::CircularFixedSizeQueue(size_t block_size, size_t block_c
 
 void CircularFixedSizeQueue::Clear() {
     // RAII 锁
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
     head_ = tail_ = current_size_ = 0;
     cv_write_.notify_all();
     cv_read_.notify_all();
@@ -58,7 +58,7 @@ void CircularFixedSizeQueue::Clear() {
 bool CircularFixedSizeQueue::Put(const uint8_t* data, size_t data_size) {
     if (!data || data_size != block_size_) return false;
 
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
 
     if (current_size_ == block_count_) return false;
 
@@ -77,7 +77,7 @@ bool CircularFixedSizeQueue::Put(const std::vector<uint8_t>& data) {
 bool CircularFixedSizeQueue::Get(uint8_t* buffer, size_t buffer_size) {
     if (!buffer || buffer_size < block_size_) return false;
 
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
 
     if (current_size_ == 0) return false;
 
@@ -90,7 +90,7 @@ bool CircularFixedSizeQueue::Get(uint8_t* buffer, size_t buffer_size) {
 }
 
 std::optional<std::vector<uint8_t>> CircularFixedSizeQueue::Get() {
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
 
     if (current_size_ == 0) return std::nullopt;
 
@@ -107,7 +107,7 @@ bool CircularFixedSizeQueue::Peek(uint8_t* buffer, size_t buffer_size) const {
     if (!buffer || buffer_size < block_size_) return false;
 
     // const 方法若需要锁，建议先在外部加锁再调用
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
 
     if (current_size_ == 0) return false;
 
@@ -116,7 +116,7 @@ bool CircularFixedSizeQueue::Peek(uint8_t* buffer, size_t buffer_size) const {
 }
 
 std::optional<std::vector<uint8_t>> CircularFixedSizeQueue::Peek() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
 
     if (current_size_ == 0) return std::nullopt;
 
@@ -180,17 +180,17 @@ bool CircularFixedSizeQueue::PutBlocking(const std::vector<uint8_t>& data, long 
 
 // 注意：IsEmpty/IsFull/Size 应由外部在持锁时调用，或在内部短暂加锁后立即返回
 bool CircularFixedSizeQueue::IsEmpty() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
     return current_size_ == 0;
 }
 
 bool CircularFixedSizeQueue::IsFull() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
     return current_size_ == block_count_;
 }
 
 size_t CircularFixedSizeQueue::Size() const {
-    LIBLSX::LockManager::LockGuard<std::mutex> guard(mutex_);
+    LSX_LIB::LockManager::LockGuard<std::mutex> guard(mutex_);
     return current_size_;
 }
 
