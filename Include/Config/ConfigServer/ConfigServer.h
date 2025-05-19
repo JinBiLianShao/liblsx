@@ -857,12 +857,12 @@ namespace LSX_LIB {
              */
             void updateConfig(const Request &req, Response &res) {
                 // --- 添加的日志开始 ---
-                std::cout << "服务器收到 PUT 请求." << std::endl;
+/*                std::cout << "服务器收到 PUT 请求." << std::endl;
                 std::cout << "  请求路径: " << req.path << std::endl;
                 std::cout << "  路径参数数量: " << req.path_params.size() << std::endl;
                 for (auto const& [key, val] : req.path_params) {
                     std::cout << "  路径参数: '" << key << "' = '" << val << "'" << std::endl;
-                }
+                }*/
                 // --- 添加的日志结束 ---
 
                 long long id_val = 0; // 用于存储从路径参数转换得到的ID
@@ -974,12 +974,12 @@ namespace LSX_LIB {
              */
             void deleteConfig(const Request &req, Response &res) {
                 // --- 添加的日志开始 ---
-                std::cout << "服务器收到 DELETE 请求." << std::endl;
+/*                std::cout << "服务器收到 DELETE 请求." << std::endl;
                 std::cout << "  请求路径: " << req.path << std::endl;
                 std::cout << "  路径参数数量: " << req.path_params.size() << std::endl;
                 for (auto const& [key, val] : req.path_params) {
                     std::cout << "  路径参数: '" << key << "' = '" << val << "'" << std::endl;
-                }
+                }*/
                 // --- 添加的日志结束 ---
 
                 long long id_val = 0;
