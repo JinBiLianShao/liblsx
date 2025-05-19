@@ -12,6 +12,7 @@
 #include <vector>        // 用于存储查询结果等
 #include <functional>    // 用于 std::function (回调处理器)
 #include <stdexcept>     // 用于标准异常 (例如 runtime_error, out_of_range, invalid_argument)
+#include <map>           // 用于 req.path_params // 添加此行，虽然通常已包含在 httplib.h 中，但明确列出更好
 
 #include <httplib.h>               // HTTP库，用于创建HTTP服务器 (cpp-httplib)
 #include <nlohmann/json.hpp>       // JSON库，用于处理JSON数据 (nlohmann/json)
@@ -60,7 +61,7 @@ namespace LSX_LIB {
              * @param dbPath SQLite 数据库文件的路径。
              * @param baseDir 静态文件服务的基础目录 (默认为当前目录 ".")。
              * 由于首页已内嵌，此目录主要用于提供其他外部静态资源 (如独立的CSS/JS文件，图片等)。
-             * @param port 服务器监听的端口号 (默认为 3000)。
+             * @param port 服务器监听的端口号 (默认为 3000).
              */
             ConfigServer(const std::string &dbPath, const std::string &baseDir = ".", int port = 3000)
                     : db_(dbPath), port_(port), baseDir_(baseDir) { // db_ 使用您提供的 LSX_LIB::SQL::SQLiteDB
@@ -378,16 +379,24 @@ namespace LSX_LIB {
     </style>
 </head>
 <body>
-<div id="app"> <h1>动态配置管理</h1>
+<div id="app">
+    <h1>动态配置管理</h1>
     <button onclick="showAddForm()">新增配置</button>
-    <div id="apiError" class="error-message"></div> <table id="dataTable"> <thead>
-            </thead>
+    <div id="apiError" class="error-message"></div>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                </tr>
+        </thead>
         <tbody>
             </tbody>
     </table>
 
-    <div class="overlay" id="overlay" onclick="hideForm()"></div> <div class="form-modal" id="formModal">
-        <h3 id="formTitle">新增配置</h3> <form id="dataForm" onsubmit="event.preventDefault(); submitForm();"> <div id="formFields">
+    <div class="overlay" id="overlay" onclick="hideForm()"></div>
+    <div class="form-modal" id="formModal">
+        <h3 id="formTitle">新增配置</h3>
+        <form id="dataForm" onsubmit="event.preventDefault(); submitForm();">
+            <div id="formFields">
                 </div>
             <button type="submit">提交</button>
             <button type="button" onclick="hideForm()">取消</button>
@@ -465,7 +474,8 @@ namespace LSX_LIB {
         thead.innerHTML = `
                 <tr>
                     ${columns.map(col => `<th>${escapeHtml(col.toString())}</th>`).join('')}
-                    <th>操作</th> </tr>
+                    <th>操作</th>
+                </tr>
             `;
 
         // 如果没有数据，则显示提示信息
@@ -516,6 +526,7 @@ namespace LSX_LIB {
         document.getElementById('formModal').classList.add('active'); // 显示模态框
         document.getElementById('overlay').classList.add('active');   // 显示遮罩层
         clearApiError(); // 打开表单时清除主界面的API错误
+        console.log("显示新增表单: isEditMode =", isEditMode, "editId =", editId);
     }
 
     /**
@@ -523,14 +534,19 @@ namespace LSX_LIB {
      * @param {string|number} id 要编辑的配置项的ID。
      */
     async function editItem(id) {
+        console.log("editItem 被调用，ID:", id); // 记录传入的 ID
         isEditMode = true; // 设置为编辑模式
         editId = id;       // 存储编辑ID
+        console.log("editItem 设置 editId:", editId); // 记录设置的 editId
+
         const item = currentData.find(d => d.id.toString() === id.toString()); // 从currentData中查找对应项
 
         if (!item) { // 如果未找到项
+            console.error("editItem: 在 currentData 中未找到 ID 为", id, "的项");
             displayApiError('未找到要编辑的配置项。数据可能已更新，请刷新列表。');
             return;
         }
+        console.log("editItem 找到要编辑的项:", item);
 
         document.getElementById('formTitle').textContent = '编辑配置'; // 设置模态框标题
         document.getElementById('dataForm').reset();
@@ -566,6 +582,7 @@ namespace LSX_LIB {
                           </div>` + fieldsHtml; // 将ID字段放在最前面
         }
         formFields.innerHTML = fieldsHtml;
+        console.log("生成表单字段，isEditMode:", isEditMode, "item:", item);
     }
 
     /**
@@ -594,32 +611,56 @@ namespace LSX_LIB {
             return;
         }
 
-        // 根据是否为编辑模式确定API的URL和HTTP方法
-        const url = isEditMode ? `/api/data/${editId}` : '/api/data';
-        const method = isEditMode ? 'PUT' : 'POST';
+        let url;
+        let method;
 
-        // 如果是编辑模式，确保 editId 有效 (虽然理论上 editItem 已保证)
-        if (isEditMode && (editId === null || editId === undefined)) {
-            alert('编辑错误：未指定配置项ID。');
-            return;
+        // --- 重点检查和构建 URL ---
+        console.log("submitForm 开始构建请求:", "isEditMode =", isEditMode, "editId =", editId);
+
+        if (isEditMode) {
+            method = 'PUT';
+            // 检查 editId 是否有效
+            if (editId === null || editId === undefined || editId === '') {
+                 console.error("提交错误：处于编辑模式，但 editId 无效或缺失！当前 editId:", editId);
+                 alert('编辑错误：未能获取配置项ID，请尝试刷新页面或重新编辑。');
+                 return; // 阻止发送请求
+            }
+            url = `/api/data/${editId}`; // 在 URL 中包含 ID
+            console.log("编辑模式，构建PUT请求 URL:", url);
+        } else {
+            method = 'POST';
+            url = '/api/data'; // 新增模式，URL不含 ID
+            console.log("新增模式，构建POST请求 URL:", url);
         }
+        // --- 检查和构建 URL 结束 ---
+
 
         try {
+            console.log("发送 fetch 请求:", method, url);
+            // 注意：请求体只包含 key 和 value，因为 ID 在 URL 中传递
+            console.log("请求体 (body):", JSON.stringify(formData));
+
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData) // 将JS对象序列化为JSON字符串
             });
 
+            console.log("收到响应，状态码:", res.status);
+
             if (!res.ok) { // HTTP响应非2xx
                 const errorData = await res.json().catch(() => ({ message: '操作失败，无法解析服务器响应。请检查网络或联系管理员。' }));
+                console.error("API 响应错误:", errorData);
                 throw new Error(errorData.message || `HTTP错误！状态码: ${res.status}`);
             }
             // 操作成功 (新增或更新)
+            console.log("操作成功，正在重新获取数据...");
             await fetchData(); // 重新获取最新数据并渲染表格
             hideForm();        // 关闭模态框
+            console.log("操作完成。");
+
         } catch (error) {
-            console.error("表单提交错误:", error);
+            console.error("表单提交捕获到错误:", error);
             // 对于表单提交的错误，可以直接在模态框内或通过alert提示用户
             alert(`操作失败: ${error.message}`);
         }
@@ -631,20 +672,39 @@ namespace LSX_LIB {
      */
     async function deleteItem(id) {
         clearApiError(); // 删除前清除错误
+        console.log("deleteItem 被调用，ID:", id); // 记录传入的 ID
+
+        // 检查 id 是否有效
+        if (id === null || id === undefined || id === '') {
+            console.error("删除错误：ID 无效或缺失！当前 ID:", id);
+            displayApiError('删除失败：未能获取配置项ID。');
+            return; // 阻止执行删除
+        }
+
         if (confirm(`确定要删除 ID 为 ${id} 的配置项吗？此操作不可恢复。`)) { // 弹窗确认
             try {
-                const res = await fetch(`/api/data/${id}`, { method: 'DELETE' }); // 调用删除API
+                const url = `/api/data/${id}`; // 在 URL 中包含 ID
+                console.log("发送 DELETE 请求到 URL:", url);
+
+                const res = await fetch(url, { method: 'DELETE' }); // 调用删除API
+                console.log("收到 DELETE 响应，状态码:", res.status);
 
                 if (!res.ok) {
                     const errorData = await res.json().catch(() => ({ message: '删除失败，无法解析服务器响应。' }));
+                    console.error("DELETE API 响应错误:", errorData);
                     throw new Error(errorData.message || `HTTP错误！状态码: ${res.status}`);
                 }
                 // 删除成功
+                console.log("删除成功，正在重新获取数据...");
                 await fetchData(); // 重新获取最新数据并渲染表格
+                console.log("删除操作完成。");
+
             } catch (error) {
-                console.error("删除配置项错误:", error);
+                console.error("删除配置项捕获到错误:", error);
                 displayApiError(`删除失败: ${error.message}`); // 在主界面显示错误
             }
+        } else {
+            console.log("用户取消了删除操作。");
         }
     }
 
@@ -656,6 +716,9 @@ namespace LSX_LIB {
         document.getElementById('formModal').classList.remove('active');
         document.getElementById('overlay').classList.remove('active');
         document.getElementById('dataForm').reset(); // 清空表单字段
+        isEditMode = false; // 隐藏表单时重置编辑模式状态
+        editId = null;      // 隐藏表单时清空编辑ID
+        console.log("隐藏表单，重置状态: isEditMode =", isEditMode, "editId =", editId);
     }
     // JavaScript逻辑结束
 </script>
@@ -793,14 +856,27 @@ namespace LSX_LIB {
              * 失败时 (如ID无效、JSON格式错误、记录不存在、数据库错误)，返回相应的错误信息。
              */
             void updateConfig(const Request &req, Response &res) {
+                // --- 添加的日志开始 ---
+                std::cout << "服务器收到 PUT 请求." << std::endl;
+                std::cout << "  请求路径: " << req.path << std::endl;
+                std::cout << "  路径参数数量: " << req.path_params.size() << std::endl;
+                for (auto const& [key, val] : req.path_params) {
+                    std::cout << "  路径参数: '" << key << "' = '" << val << "'" << std::endl;
+                }
+                // --- 添加的日志结束 ---
+
                 long long id_val = 0; // 用于存储从路径参数转换得到的ID
                 try {
-                    if (!req.has_param("id")) {
+                    // --- 修改检查条件：使用 count() 替代 has_param() ---
+                    if (req.path_params.count("id") == 0) {
+                        std::cerr << "错误：PUT 请求中，服务器未能在路径中找到ID参数 (通过 count 检查)." << std::endl; // 改进日志
                         res.status = 400; // 错误请求
                         json error_res = {{"message", "URL路径中缺少ID参数。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                         return;
                     }
+                    // --- 修改检查条件结束 ---
+
                     id_val = std::stoll(req.path_params.at("id"));
 
                     auto jsonData = json::parse(req.body);
@@ -851,7 +927,7 @@ namespace LSX_LIB {
                     } else if (error_what.find("key") != std::string::npos || error_what.find("value") != std::string::npos) { // json.at() 失败
                         json error_res = {{"message", "请求的JSON中缺少必须的字段 (如key或value)。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
-                    } else { // 理论上是 req.path_params.at("id") 失败，但已用 has_param 检查
+                    } else { // 理论上是 req.path_params.at("id") 失败，但已用 count 检查
                         json error_res = {{"message", "获取路径或JSON参数时发生越界错误。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                     }
@@ -897,14 +973,27 @@ namespace LSX_LIB {
              * 失败时 (如ID无效、记录不存在、数据库错误)，返回相应的错误信息。
              */
             void deleteConfig(const Request &req, Response &res) {
+                // --- 添加的日志开始 ---
+                std::cout << "服务器收到 DELETE 请求." << std::endl;
+                std::cout << "  请求路径: " << req.path << std::endl;
+                std::cout << "  路径参数数量: " << req.path_params.size() << std::endl;
+                for (auto const& [key, val] : req.path_params) {
+                    std::cout << "  路径参数: '" << key << "' = '" << val << "'" << std::endl;
+                }
+                // --- 添加的日志结束 ---
+
                 long long id_val = 0;
                 try {
-                    if (!req.has_param("id")) {
+                    // --- 修改检查条件：使用 count() 替代 has_param() ---
+                    if (req.path_params.count("id") == 0) {
+                        std::cerr << "错误：DELETE 请求中，服务器未能在路径中找到ID参数 (通过 count 检查)." << std::endl; // 改进日志
                         res.status = 400;
                         json error_res = {{"message", "URL路径中缺少ID参数。"}};
                         res.set_content(error_res.dump(), "application/json; charset=utf-8");
                         return;
                     }
+                    // --- 修改检查条件结束 ---
+
                     id_val = std::stoll(req.path_params.at("id"));
 
                     auto existing = db_.query("config", {"id"}, "id = " + std::to_string(id_val), "", 1, 0);
