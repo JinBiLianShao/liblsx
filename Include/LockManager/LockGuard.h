@@ -120,8 +120,8 @@
  * - **底层 Unique_Lock**: LockGuard 内部使用了 `std::unique_lock`，因此它继承了 `std::unique_lock` 的一些特性，例如可以与条件变量一起使用（尽管此 LockGuard 类本身没有直接暴露条件变量的 `wait` 接口）。
  */
 
-#ifndef LIBLSX_LOCK_MANAGER_LOCK_GUARD_H
-#define LIBLSX_LOCK_MANAGER_LOCK_GUARD_H
+#ifndef LIB_LSX_LOCK_MANAGER_LOCK_GUARD_H
+#define LIB_LSX_LOCK_MANAGER_LOCK_GUARD_H
 #pragma once
 
 #include <mutex> // For std::unique_lock, std::mutex, std::timed_mutex etc.
@@ -133,12 +133,12 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIBLSX {
+
     /**
      * @brief 锁管理相关的命名空间。
      * 包含锁和同步原语的封装。
      */
-    namespace LockManager {
+    namespace LIB_LSX::LockManager {
 
         /**
          * @brief 锁守卫类 (模板)。
@@ -244,7 +244,7 @@ namespace LIBLSX {
             std::unique_lock<MutexType> lock_;
         };
 
-    } // namespace LockManager
-} // namespace LIBLSX
+    } // namespace LIB_LSX::LockManager
+// namespace LIBLSX
 
 #endif // LIBLSX_LOCK_MANAGER_LOCK_GUARD_H

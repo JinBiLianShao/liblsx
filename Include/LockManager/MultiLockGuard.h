@@ -92,8 +92,8 @@
  * - **无延迟锁定/尝试锁定**: MultiLockGuard (基于 std::scoped_lock) 不支持延迟锁定或单独的 try_lock/try_lock_for 方法。它总是尝试在构造时一次性锁定所有互斥量。
  */
 
-#ifndef LIBLSX_LOCK_MANAGER_MULTI_LOCK_GUARD_H
-#define LIBLSX_LOCK_MANAGER_MULTI_LOCK_GUARD_H
+#ifndef LIB_LSX_LOCK_MANAGER_MULTI_LOCK_GUARD_H
+#define LIB_LSX_LOCK_MANAGER_MULTI_LOCK_GUARD_H
 #pragma once
 
 #include <mutex> // For std::scoped_lock, std::mutex etc.
@@ -103,7 +103,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIBLSX {
+namespace LIB_LSX {
     /**
      * @brief 锁管理相关的命名空间。
      * 包含锁和同步原语的封装。

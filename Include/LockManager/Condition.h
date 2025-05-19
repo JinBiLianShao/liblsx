@@ -1,7 +1,7 @@
 /**
  * @file Condition.h
  * @brief 条件变量封装类
- * @details 定义了 LIBLSX::LockManager 命名空间下的 Condition 类，
+ * @details 定义了 LIB_LSX::LockManager 命名空间下的 Condition 类，
  * 这是一个对 std::condition_variable_any 的封装，提供了线程同步的功能。
  * 它允许线程在某个条件不满足时等待，并在条件满足时被通知唤醒。
  * 支持与满足 BasicLockable 要求的任何锁类型一起使用。
@@ -25,7 +25,7 @@
  * #include <mutex>
  * #include <vector>
  *
- * namespace LIBLSX {
+ * namespace LIB_LSX {
  * namespace LockManager {
  * // Forward declaration for example usage
  * class Condition;
@@ -103,8 +103,8 @@
  * - **头文件实现**: 由于 `wait` 方法是模板方法，其实现必须放在头文件中。`notify_one` 和 `notify_all` 如果不是模板，可以放在 .cpp 文件中实现。
  */
 
-#ifndef LIBLSX_LOCK_MANAGER_CONDITION_H
-#define LIBLSX_LOCK_MANAGER_CONDITION_H
+#ifndef LIB_LSX_LOCK_MANAGER_CONDITION_H
+#define LIB_LSX_LOCK_MANAGER_CONDITION_H
 #pragma once
 
 #include <condition_variable> // For std::condition_variable_any
@@ -117,12 +117,12 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIBLSX {
+
     /**
      * @brief 锁管理相关的命名空间。
      * 包含锁和同步原语的封装。
      */
-    namespace LockManager {
+    namespace LIB_LSX::LockManager {
 
         /**
          * @brief 条件变量封装类。
@@ -196,7 +196,7 @@ namespace LIBLSX {
             std::condition_variable_any cv_;
         };
 
-    } // namespace LockManager
-} // namespace LIBLSX
+    } // namespace LIB_LSX::LockManager
+// namespace LIBLSX
 
 #endif // LIBLSX_LOCK_MANAGER_CONDITION_H

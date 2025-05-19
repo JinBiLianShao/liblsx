@@ -138,8 +138,8 @@
  * - **读写分离**: 共享互斥量允许多个线程同时持有共享锁（用于读），但只允许一个线程持有独占锁（用于写）。在设计时需要明确哪些操作需要共享锁，哪些需要独占锁。
  */
 
-#ifndef LIBLSX_LOCK_MANAGER_SHARED_LOCK_GUARD_H
-#define LIBLSX_LOCK_MANAGER_SHARED_LOCK_GUARD_H
+#ifndef LIB_LSX_LOCK_MANAGER_SHARED_LOCK_GUARD_H
+#define LIB_LSX_LOCK_MANAGER_SHARED_LOCK_GUARD_H
 #pragma once
 
 #include <shared_mutex> // For std::shared_lock, std::shared_mutex, std::shared_timed_mutex
@@ -151,7 +151,7 @@
 /**
  * @brief LSX 库的根命名空间。
  */
-namespace LIBLSX {
+namespace LIB_LSX {
     /**
      * @brief 锁管理相关的命名空间。
      * 包含锁和同步原语的封装。
