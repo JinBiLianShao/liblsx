@@ -21,13 +21,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(PROJECT_NAME "lsx") #改成自己的项目名称
 project(${PROJECT_NAME})
 
-set(COMPILER "x86") #模式选项
+set(COMPILER "arm64") #模式选项
 
 if (COMPILER MATCHES "arm64")
     set(CMAKE_HOST_SYSTEM_NAME Linux)
-    set(CMAKE_C_COMPILER "/bin/aarch64-linux-gnu-gcc")
-    set(CMAKE_CXX_COMPILER "/bin/aarch64-linux-gnu-g++")
-    link_directories(./Include/SQL/SQLite3/sqlite3-arm64) #arm64 sqlite3
+    set(CMAKE_C_COMPILER "/usr/bin/aarch64-linux-gnu-gcc-7")
+    set(CMAKE_CXX_COMPILER "/usr/bin/aarch64-linux-gnu-g++-7")
+    link_directories(./Include/SQL/SQLite3/sqlite3-arm64/lib) #arm64 sqlite3
 elseif(COMPILER MATCHES "arm32")
     set(CMAKE_HOST_SYSTEM_NAME Linux)
     set(CMAKE_C_COMPILER "/usr/bin/arm-linux-gnueabihf-gcc-7")
@@ -35,11 +35,11 @@ elseif(COMPILER MATCHES "arm32")
     #set(CMAKE_C_COMPILER "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc")
     #set(CMAKE_CXX_COMPILER "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-g++")
     #set(CMAKE_CXX_LINK_EXECUTABLE "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-ld")
-    link_directories(./Include/SQL/SQLite3/sqlite3-arm32) #arm32 sqlite3
+    link_directories(./Include/SQL/SQLite3/sqlite3-arm32/lib) #arm32 sqlite3
 elseif(COMPILER MATCHES "x86")
     set(CMAKE_C_COMPILER "gcc")
     set(CMAKE_CXX_COMPILER "g++")
-    link_directories(./Include/SQL/SQLite3/sqlite3-x86) #x86 sqlite3
+    link_directories(./Include/SQL/SQLite3/sqlite3-x86/lib) #x86 sqlite3
 endif()
 
 
