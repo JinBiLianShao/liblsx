@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 4.0.2)
 
 #发布模式
 set(CMAKE_BUILD_TYPE Release)
@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(PROJECT_NAME "lsx") #改成自己的项目名称
 project(${PROJECT_NAME})
 
-set(COMPILER "arm64") #模式选项
+set(COMPILER "arm32") #模式选项
 
 if (COMPILER MATCHES "arm64")
     set(CMAKE_HOST_SYSTEM_NAME Linux)
