@@ -1,74 +1,179 @@
-cmake_minimum_required(VERSION 4.0.2)
+####################################################################################################
+# 📘 通用 CMake 构建系统模板说明文档（支持编译可执行文件或库）
+# 作者 ： 连思鑫
+# 本构建系统支持以下功能：
+#   ✅ 自动收集源文件和头文件
+#   ✅ 支持三种构建目标：可执行文件 / 静态库 / 动态库
+#   ✅ 适配多平台交叉编译（x86、arm32、arm64）
+#   ✅ 链接外部静态库（如 SQLite）
+#   ✅ 可选启用 OpenMP 支持
+#   ✅ 编译选项集中管理，易扩展
+#
+# 📁 推荐项目目录结构：
+#   project_root/
+#   ├── CMakeLists.txt
+#   ├── src/                # 项目源文件
+#   ├── include/            # 项目头文件
+#   ├── lib/                # 可选本地库
+#   ├── build/              # 构建目录
+#   └── external/           # 第三方库（如 Sqlite）
+#
+# 🧩 可配置选项（通过命令行传入）：
+#   -DCOMPILER_TARGET=x86|arm32|arm64             # 目标平台
+#   -DPUBLIC_PACKAGE_DIR=/path/to/packages|NO     # 第三方库路径 / NO表示不引入第三方库路径
+#   -DCMAKE_BUILD_TYPE=Release|Debug              # 构建类型
+#   -DENABLE_OPENMP=ON|OFF                        # 是否启用 OpenMP
+#   -DTARGET_TYPE=executable|static|shared        # 目标类型：可执行 / 静态库 / 动态库
+#
+# ✅ 构建示例：
+#   mkdir build && cd build
+#   cmake .. -DCOMPILER_TARGET=arm32 -DPUBLIC_PACKAGE_DIR=/home/lsx/PublicPackage -DTARGET_TYPE=static
+#   make -j
+#
+####################################################################################################
 
-#发布模式
-set(CMAKE_BUILD_TYPE Release)
-#set(CMAKE_BUILD_TYPE Debug)
+cmake_minimum_required(VERSION 3.10)
 
-# 检测并配置OpenMP支持
-#find_package(OpenMP REQUIRED)
-#if (OPENMP_FOUND)
-#    message("OpenMP support found.")
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-#    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-#endif()
+# 项目名称与语言
+if (NOT DEFINED PROJECT_NAME)
+    set(PROJECT_NAME "lsx")
+endif ()
+project(${PROJECT_NAME} LANGUAGES C CXX)
 
-# 设置C++标准为C++14
+# 构建类型默认值
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type (Release or Debug)" FORCE)
+endif ()
+
+# 编译标准
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 设置项目名称
-set(PROJECT_NAME "lsx") #改成自己的项目名称
-project(${PROJECT_NAME})
+# ===================== 用户配置变量 =====================
+set(COMPILER_TARGET "x86" CACHE STRING "Target architecture: x86, arm32, arm64")
+set(PUBLIC_PACKAGE_DIR "NO" CACHE PATH "External packages root path or NO")
+set(TARGET_TYPE "executable" CACHE STRING "Build target type: executable | static | shared")
+option(ENABLE_OPENMP "Enable OpenMP parallelism" OFF)
+# ========================================================
 
-set(COMPILER "arm32") #模式选项
+# ===================== 是否启用外部包 =====================
+set(USE_PUBLIC_PACKAGE ON)
+if (PUBLIC_PACKAGE_DIR STREQUAL "NO")
+    set(USE_PUBLIC_PACKAGE OFF)
+endif ()
+# ==========================================================
 
-if (COMPILER MATCHES "arm64")
-    set(CMAKE_HOST_SYSTEM_NAME Linux)
-    set(CMAKE_C_COMPILER "/usr/bin/aarch64-linux-gnu-gcc")
-    set(CMAKE_CXX_COMPILER "/usr/bin/aarch64-linux-gnu-g++")
-    link_directories(./Include/SQL/SQLite3/sqlite3-arm64/lib) #arm64 sqlite3
-elseif(COMPILER MATCHES "arm32")
-    set(CMAKE_HOST_SYSTEM_NAME Linux)
-    set(CMAKE_C_COMPILER "/usr/bin/arm-linux-gnueabihf-gcc")
-    set(CMAKE_CXX_COMPILER "/usr/bin/arm-linux-gnueabihf-g++")
-    #set(CMAKE_C_COMPILER "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc")
-    #set(CMAKE_CXX_COMPILER "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-g++")
-    #set(CMAKE_CXX_LINK_EXECUTABLE "/home/lsx/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-ld")
-    link_directories(./Include/SQL/SQLite3/sqlite3-arm32/lib) #arm32 sqlite3
-elseif(COMPILER MATCHES "x86")
+# ===================== 架构与交叉编译 =====================
+if (COMPILER_TARGET STREQUAL "arm64")
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_C_COMPILER "/bin/aarch64-linux-gnu-gcc")
+    set(CMAKE_CXX_COMPILER "/bin/aarch64-linux-gnu-g++")
+    if (USE_PUBLIC_PACKAGE)
+        set(SQLITE_LIB_DIR "${PUBLIC_PACKAGE_DIR}/Sqlite/lib/arm64")
+        set(SQLITE3_LIB "${SQLITE_LIB_DIR}/libsqlite3.a")
+    endif ()
+
+elseif (COMPILER_TARGET STREQUAL "arm32")
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_C_COMPILER "/opt/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc")
+    set(CMAKE_CXX_COMPILER "/opt/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-g++")
+    if (USE_PUBLIC_PACKAGE)
+        set(SQLITE_LIB_DIR "${PUBLIC_PACKAGE_DIR}/Sqlite/lib/arm32")
+        set(SQLITE3_LIB "${SQLITE_LIB_DIR}/libsqlite3.a")
+    endif ()
+
+elseif (COMPILER_TARGET STREQUAL "x86")
     set(CMAKE_C_COMPILER "gcc")
     set(CMAKE_CXX_COMPILER "g++")
-    link_directories(./Include/SQL/SQLite3/sqlite3-x86/lib) #x86 sqlite3
-endif()
+    if (USE_PUBLIC_PACKAGE)
+        set(SQLITE_LIB_DIR "${PUBLIC_PACKAGE_DIR}/Sqlite/lib/x86")
+        set(SQLITE3_LIB "${SQLITE_LIB_DIR}/libsqlite3.a")
+    endif ()
 
+else ()
+    message(FATAL_ERROR "Unsupported COMPILER_TARGET: ${COMPILER_TARGET}")
+endif ()
 
-# 自动查找所有源文件并添加到目标
-file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/*.cpp" "${CMAKE_SOURCE_DIR}/*.c" "${CMAKE_SOURCE_DIR}/*.cc")
-# 手动排除构建目录中的生成文件
-list(FILTER SOURCES EXCLUDE REGEX "${CMAKE_BINARY_DIR}")
-add_library(${PROJECT_NAME}
-        #STATIC  #静态库
-        SHARED #动态库
-        ${SOURCES})
-#add_executable(${PROJECT_NAME} ${SOURCES})
+link_directories(${SQLITE_LIB_DIR})
 
+# ===================== 自动收集源文件与头文件 =====================
+file(GLOB_RECURSE SRC_FILES
+        "${CMAKE_SOURCE_DIR}/*.cpp"
+        "${CMAKE_SOURCE_DIR}/*.cc"
+)
 
-# 自动查找所有头文件并获取其目录
-file(GLOB_RECURSE HEADER_FILES "${CMAKE_SOURCE_DIR}/*.h" "${CMAKE_SOURCE_DIR}/*.hpp")
+file(GLOB_RECURSE HEADER_FILES
+        "${CMAKE_SOURCE_DIR}/*.h"
+        "${CMAKE_SOURCE_DIR}/*.hpp"
+)
 
-# 提取目录路径
+if (USE_PUBLIC_PACKAGE)
+    file(GLOB_RECURSE EXT_SRC_FILES
+            "${PUBLIC_PACKAGE_DIR}/*.cpp"
+            "${PUBLIC_PACKAGE_DIR}/*.cc"
+    )
+    file(GLOB_RECURSE EXT_HDR_FILES
+            "${PUBLIC_PACKAGE_DIR}/*.h"
+            "${PUBLIC_PACKAGE_DIR}/*.hpp"
+    )
+    list(APPEND SRC_FILES ${EXT_SRC_FILES})
+    list(APPEND HEADER_FILES ${EXT_HDR_FILES})
+endif ()
+
+# 排除构建目录文件
+list(FILTER SRC_FILES EXCLUDE REGEX "${CMAKE_BINARY_DIR}")
+
+# 提取唯一头文件目录
 set(INCLUDE_DIRS "")
-foreach(HEADER_FILE ${HEADER_FILES})
-    get_filename_component(DIR_PATH ${HEADER_FILE} DIRECTORY)
-    list(APPEND INCLUDE_DIRS ${DIR_PATH})
-endforeach()
-
-# 只保留唯一的目录
+foreach (HDR ${HEADER_FILES})
+    get_filename_component(DIR ${HDR} DIRECTORY)
+    list(APPEND INCLUDE_DIRS ${DIR})
+endforeach ()
 list(REMOVE_DUPLICATES INCLUDE_DIRS)
 
-# 添加到目标
+# ===================== 构建目标定义 =====================
+if (TARGET_TYPE STREQUAL "executable")
+    add_executable(${PROJECT_NAME} ${SRC_FILES})
+elseif (TARGET_TYPE STREQUAL "static")
+    add_library(${PROJECT_NAME} STATIC ${SRC_FILES})
+elseif (TARGET_TYPE STREQUAL "shared")
+    add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
+else ()
+    message(FATAL_ERROR "Invalid TARGET_TYPE: ${TARGET_TYPE} (must be executable|static|shared)")
+endif ()
+
+# 包含头文件路径
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 
-# 链接pthread库
-target_link_libraries(${PROJECT_NAME} pthread rt sqlite3)
+# ===================== 链接库设置 =====================
+# 只有构建可执行文件时才链接系统库
+if (TARGET_TYPE STREQUAL "executable")
+    target_link_libraries(${PROJECT_NAME}
+            PRIVATE
+            ${SQLITE3_LIB}
+            pthread
+            rt
+            dl
+            m
+            "-Wl,--start-group"
+            "-Wl,--end-group"
+    )
+
+    # 链接安全设置（仅限可执行）
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+            LINK_WHAT_YOU_USE TRUE
+    )
+endif ()
+
+# ===================== OpenMP 支持（可选） =====================
+option(ENABLE_OPENMP "Enable OpenMP parallelism" OFF)
+
+if (ENABLE_OPENMP)
+    find_package(OpenMP REQUIRED)
+    if (OpenMP_FOUND)
+        message(STATUS "OpenMP enabled")
+        target_compile_options(${PROJECT_NAME} PRIVATE ${OpenMP_C_FLAGS} ${OpenMP_CXX_FLAGS})
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenMP_EXE_LINKER_FLAGS})
+    endif ()
+endif ()
