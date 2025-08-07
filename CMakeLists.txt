@@ -123,6 +123,8 @@ endif ()
 
 # 排除构建目录文件
 list(FILTER SRC_FILES EXCLUDE REGEX "${CMAKE_BINARY_DIR}")
+list(FILTER SRC_FILES EXCLUDE REGEX ".*/CMakeFiles/.*")
+list(FILTER SRC_FILES EXCLUDE REGEX "${CMAKE_BINARY_DIR}/.*")
 
 # 提取唯一头文件目录
 set(INCLUDE_DIRS "")
