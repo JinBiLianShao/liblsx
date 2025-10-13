@@ -159,15 +159,15 @@
 #include <vector> // For convenience read/write methods
 #include <mutex> // For thread safety (std::mutex, std::lock_guard)
 
-// Include OS-specific headers only in the .cpp for implementation details
-// #ifdef _WIN32
-// #include <windows.h> // For HANDLE, LPVOID etc.
-// #else // POSIX
-// #include <sys/ipc.h> // For IPC_CREAT, IPC_EXCL, IPC_RMID, IPC_STAT
-// #include <sys/shm.h> // For shmget, shmat, shmdt, shmctl
-// #include <sys/types.h> // For key_t
-// #include <unistd.h> // For ftok
-// #endif
+
+#ifdef _WIN32
+#include <windows.h> // For HANDLE, LPVOID etc.
+#else // POSIX
+#include <sys/ipc.h> // For IPC_CREAT, IPC_EXCL, IPC_RMID, IPC_STAT
+#include <sys/shm.h> // For shmget, shmat, shmdt, shmctl
+#include <sys/types.h> // For key_t
+#include <unistd.h> // For ftok
+#endif
 
 
 /**
@@ -179,7 +179,6 @@ namespace LSX_LIB {
      * 包含内存缓冲区和相关工具。
      */
     namespace Memory {
-
         /**
          * @brief 进程间共享内存管理类。
          * 实现跨平台的进程间共享内存的管理，允许不同进程访问同一块物理内存。
@@ -199,12 +198,12 @@ namespace LSX_LIB {
              * 在 Windows 系统下，用于标识共享内存段。
              * 初始化为 nullptr。
              */
-            void* hMapFile_ = nullptr; // Use void* to avoid including windows.h in header
+            void *hMapFile_ = nullptr; // Use void* to avoid including windows.h in header
             /**
              * @brief Windows 共享内存段在当前进程地址空间中的基地址。
              * 初始化为 nullptr。
              */
-            void* lpBaseAddress_ = nullptr;
+            void *lpBaseAddress_ = nullptr;
 #else // POSIX
             /**
              * @brief POSIX 共享内存段标识符。
@@ -216,7 +215,7 @@ namespace LSX_LIB {
              * @brief POSIX 共享内存段在当前进程地址空间中的地址。
              * 初始化为 nullptr。
              */
-            void* shm_address_ = nullptr;
+            void *shm_address_ = nullptr;
             /**
              * @brief POSIX 共享内存段的 System V IPC 键。
              * 通常通过 ftok 生成，用于在不同进程中引用同一个共享内存段。
@@ -254,6 +253,7 @@ namespace LSX_LIB {
              * 初始化 SharedMemory 对象，不创建或附加到任何共享内存段。
              */
             SharedMemory();
+
             /**
              * @brief 析构函数。
              * 在对象销毁时自动调用 Detach()，如果此实例是创建者，还可能尝试调用 Destroy()。
@@ -266,12 +266,14 @@ namespace LSX_LIB {
              * @brief 禁用拷贝构造函数。
              * 共享内存句柄和所有权标志是 OS 资源，拷贝不安全。
              */
-            SharedMemory(const SharedMemory&) = delete;
+            SharedMemory(const SharedMemory &) = delete;
+
             /**
              * @brief 禁用拷贝赋值运算符。
              * 共享内存句柄和所有权标志是 OS 资源，拷贝不安全。
              */
-            SharedMemory& operator=(const SharedMemory&) = delete;
+            SharedMemory &operator=(const SharedMemory &) = delete;
+
             // Consider adding move constructor/assignment if managing resources allows safe transfer
 
             // --- Management Functions ---
@@ -288,7 +290,7 @@ namespace LSX_LIB {
             // key_or_name: identifier for the shared memory (e.g., file path for ftok, or a name string)
             // size: size of the segment in bytes
             // Returns true on success, false on failure
-            bool Create(const std::string& key_or_name, size_t size);
+            bool Create(const std::string &key_or_name, size_t size);
 
             /**
              * @brief 附加到一个已存在的共享内存段。
@@ -300,7 +302,7 @@ namespace LSX_LIB {
              */
             // Attach to an existing shared memory segment
             // Returns true on success, false on failure
-            bool Open(const std::string& key_or_name, size_t size);
+            bool Open(const std::string &key_or_name, size_t size);
 
             /**
              * @brief 从进程的地址空间分离共享内存段。
@@ -331,7 +333,7 @@ namespace LSX_LIB {
              * @return 共享内存段的基地址。如果未附加，返回 nullptr。
              */
             // Get the base address of the attached shared memory segment
-            void* GetAddress() const;
+            void *GetAddress() const;
 
             /**
              * @brief 在共享内存段的指定偏移量写入数据。
@@ -345,7 +347,8 @@ namespace LSX_LIB {
              */
             // Write data to the shared memory segment at a given offset
             // Returns number of bytes written (equal to size if successful within bounds, 0 otherwise)
-            size_t Write(size_t offset, const uint8_t* data, size_t size);
+            size_t Write(size_t offset, const uint8_t *data, size_t size);
+
             /**
              * @brief 在共享内存段的指定偏移量写入数据。
              * 便利方法，将 std::vector 中的数据从给定的偏移量开始写入附加的共享内存段。
@@ -355,7 +358,7 @@ namespace LSX_LIB {
              * @param data 包含要写入数据的 std::vector。
              * @return 实际写入的字节数。如果成功写入且在段范围内，返回 data.size()；如果 offset 或 offset + data.size() 超出段范围，返回 0。
              */
-            size_t Write(size_t offset, const std::vector<uint8_t>& data);
+            size_t Write(size_t offset, const std::vector<uint8_t> &data);
 
             /**
              * @brief 从共享内存段的指定偏移量读取数据。
@@ -369,7 +372,8 @@ namespace LSX_LIB {
              */
             // Read data from the shared memory segment at a given offset
             // Returns number of bytes read (equal to size if successful within bounds, 0 otherwise)
-            size_t Read(size_t offset, uint8_t* buffer, size_t size) const;
+            size_t Read(size_t offset, uint8_t *buffer, size_t size) const;
+
             /**
              * @brief 从共享内存段的指定偏移量读取数据。
              * 便利方法，从附加的共享内存段中指定偏移量开始读取指定数量的数据，并返回一个新的 std::vector。
@@ -411,7 +415,6 @@ namespace LSX_LIB {
             // This is a conceptual interface, implementation requires OS-specific lookups.
             // static bool Exists(const std::string& key_or_name); // 需要具体实现
         };
-
     } // namespace Memory
 } // namespace LSX_LIB
 
