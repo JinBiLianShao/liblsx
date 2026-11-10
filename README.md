@@ -189,9 +189,40 @@ int main() { // Note: Logger instance lifecycle needs management in a real app.
 
 - **当前版本**：v0.1.1
 
+## 构建方式（v3.0 构建系统）
+
+### 本机编译（同时产出静态库 + 动态库）
+```bash
+mkdir -p build/both && cd build/both
+cmake ../.. -DCOMPILER_TARGET=x86 -DTARGET_TYPE=both
+make -j
+# 产出：build/both/x86/static/liblsx.a  build/both/x86/shared/liblsx.so.0.1.1（带 SOVERSION 软链）
+```
+
+### 交叉编译（x86 / arm32 / arm64）
+编译器选择已交给标准 toolchain 文件（`toolchains/*.cmake`），不再硬编码路径：
+```bash
+mkdir -p build/arm64 && cd build/arm64
+cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../toolchains/arm64.cmake -DCOMPILER_TARGET=arm64 -DTARGET_TYPE=both
+make -j
+# 产出 arm64 架构的 liblsx.a / liblsx.so，归档在 build/arm64/arm64/ 下
+```
+arm32 同理，toolchain 前缀可通过 `-DARM32_TOOLCHAIN_PREFIX=...` 覆盖。
+
+### TARGET_TYPE 选项
+- `both`（默认）：同时构建 `lsx_static` 与 `lsx_shared`
+- `static` / `shared`：只构建其一
+- `executable`：把库源码编译为可执行文件（旧行为兼容）
+
+### 安装
+```bash
+make install   # 头文件按模块装入 <prefix>/include/lsx/，库装入 <prefix>/lib/
+```
+
 ## 更新日志
 
 ### v0.1.1（2026-11-10）
+- **构建系统升级到 v3.0**：一次构建同时产出静态库与动态库（TARGET_TYPE=both，也可单独选）；交叉编译改走标准 toolchain 文件机制（内置 toolchains/x86、arm32、arm64.cmake，可覆盖前缀），不再在 CMakeLists 里硬编码编译器路径；产出物按平台归档到 build/<target>/{static,shared}/，动态库接入 SOVERSION（liblsx.so.0.1.1 软链）；源码收集改为只取 src/（旧版把 vendored 三方头也卷进 include 与 glob）；安装规则保留并经过 DESTDIR 实测。
 - **修复 Scheduler::shutdown 死锁**：周期任务的退出条件从 getState() == STOPPED 改为 isStopRequested()。原实现中 STOPPED 状态要等 stop() 内部 join 完成后才写入，任务循环与 stop() 互相等待，shutdown 永久阻塞。ThreadWrapper 新增公开方法 isStopRequested() 供任务循环使用。
 - **代码结构清理**：移除 17 个 .cpp 文件中误用的 #pragma once（该指令只应出现在头文件）；清理重复 include 与缩进残缺。
 - **C++17 正统化**：ThreadPool::enqueue 统一使用 std::invoke_result_t，删除已废弃的 std::result_of 回退分支。
