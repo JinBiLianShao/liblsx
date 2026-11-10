@@ -206,6 +206,16 @@ int main() { // Note: Logger instance lifecycle needs management in a real app.
 - **协议演化**：TLV 未知字段自动跳过，新旧版本互操作。
 - **header-only**，与 DataTransfer 组合构成完整的设备间通信方案。
 
+### 9. IPC 模块（v0.4.0 新增，POSIX）
+- **Unix domain socket 封装**：IpcServer/IpcClient，接口风格与 DataTransfer 一致。
+- **RAII fd**：析构自动关闭；create 自动清理残留 socket 文件，close 自动删除。
+- **超时可控**：accept/receive/send 均支持 SO_RCVTIMEO/SO_SNDTIMEO。
+
+### 10. Result 模块（v0.4.0 新增）
+- **Result<T, E> 统一错误处理**：值或错误的二者取一（std::expected 的 C++17 过渡方案）。
+- **RAII 语义 + fail fast**：Err 状态访问 value() 立即 assert 暴露编程错误。
+- **void 特化 + valueOr + map**：覆盖"只关心成败"、默认值、链式变换三种场景。
+
 ## 构建方式（v3.0 构建系统）
 
 ### 本机编译（同时产出静态库 + 动态库）
@@ -248,6 +258,12 @@ Memory 全队列/管道/共享内存（含多线程压测）、DataTransfer TCP/
 Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复三个死锁/失效缺陷（见更新日志）。
 
 ## 更新日志
+
+### v0.4.0（2026-11-10）
+- **新增 IPC 模块**：Unix domain socket 封装（IpcServer/IpcClient），接口与 DataTransfer 一致，RAII fd 管理，残留 socket 文件自动清理，accept/receive/send 全部支持超时。POSIX 平台。
+- **新增 Result 模块**：Result<T, E> 统一错误处理类型（std::expected 的 C++17 过渡方案），含 void 特化、valueOr、map 链式变换；header-only。
+- **新增 21 个深度测试用例**（总计 130 个），覆盖 IPC 回环/1MB 大载荷/超时语义/断线检测/残留文件清理、Result 全语义边界；三轮稳定性全过。
+- **修复 INIReader strncpy 截断警告**：strncpy0 改为显式限长拷贝，-Wall 全库零警告维持。
 
 ### v0.3.0（2026-11-10）
 - **新增 Serialize 模块**：header-only 二进制编解码（BinaryWriter/BinaryReader），支持小端固定宽度整数、varint/zigzag、长度前缀字符串与 TLV 字段（对齐 protobuf wire format）。面向嵌入式设备间通信协议，与 DataTransfer 组合使用。

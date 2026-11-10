@@ -333,8 +333,12 @@ inline static char *find_chars_or_comment(const char *s, const char *chars) {
  * @return 返回 `dest`。
  */
 inline static char *strncpy0(char *dest, const char *src, size_t size) {
-    strncpy(dest, src, size);
-    dest[size - 1] = '\0';
+    if (size == 0) return dest;
+    // 只拷贝 size-1 字节并保证 null 结尾（消除截断警告且语义更安全）
+    size_t len = strlen(src);
+    if (len >= size) len = size - 1;
+    memcpy(dest, src, len);
+    dest[len] = '\0';
     return dest;
 }
 
