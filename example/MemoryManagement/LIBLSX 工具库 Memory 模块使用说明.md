@@ -167,7 +167,11 @@ std::vector<uint8_t> peeked = byte_pipe.Peek(1);
 std::cout << "Pipe peeked " << peeked.size() << " byte." << std::endl;
 ```
 
-### 3. CircularQueue 模块 (`CircularQueue<T>`)
+### 3. CircularQueue 模块
+
+> **v0.1.2 修复**：此前 Enqueue/Dequeue 内部持锁调用 IsFull/IsEmpty 造成
+> std::mutex 重入死锁，首次入队即阻塞。现已通过内部不加锁检查修复，
+> 下方接口签名与行为描述均以修复后为准。 (`CircularQueue<T>`)
 
 实现一个通用的循环队列，可以存储任意类型 `T` 的数据。它具有固定的容量，并循环利用底层存储空间。
 

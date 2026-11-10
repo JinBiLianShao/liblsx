@@ -199,7 +199,7 @@ LIBLSX/
     ```
 * **高级用例**:
     * **递归锁**: 如果一个函数可能递归调用自身，且在每次调用中都需要获取同一个互斥量，可以使用 `std::recursive_mutex`。但通常情况下，递归锁应避免，因为它可能掩盖不当的设计模式，并引入不必要的复杂性。
-    * **条件变量配合**: `LockGuard`（通过其内部的 `std::unique_lock`）可以与 `Condition` 类配合使用，提供条件等待时的锁释放和重获取机制。
+    * **条件变量配合**: `Condition` 的 `wait()` 要求传入对象满足 BasicLockable（需提供 lock()/unlock()）。请直接使用 `std::unique_lock<std::mutex>` 配合（见 2.4 节）；`LockGuard` 本身不暴露 lock()/unlock()，不能直接传给 Condition::wait。
 
 #### 6.2 `LIBLSX::LockManager::SharedLockGuard<SharedMutexType>` (共享锁)
 

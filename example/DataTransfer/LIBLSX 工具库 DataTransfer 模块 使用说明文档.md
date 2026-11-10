@@ -239,6 +239,9 @@ auto tcpC = CommunicationFactory::create(
 
 ### TCP 服务器（TcpServer）
 
+> **v0.1.2 修复**：此前 acceptConnection() 持锁调用 closeClientConnection()
+> 造成 mutex 重入死锁，accept 永远无法执行。已修复，下方用法不变。
+
 ```cpp
 auto tcpS = CommunicationFactory::create(
     CommType::TCP_SERVER, "", 8080);

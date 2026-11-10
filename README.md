@@ -187,7 +187,7 @@ int main() { // Note: Logger instance lifecycle needs management in a real app.
 
 ## 项目状态与贡献
 
-- **当前版本**：v0.1.1
+- **当前版本**：v0.1.2
 
 ## 构建方式（v3.0 构建系统）
 

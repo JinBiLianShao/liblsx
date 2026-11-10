@@ -382,3 +382,40 @@ int main() {
 ## 总结
 
 LIBLSX 工具库的 Thread 模块提供了一套功能完善的多线程编程工具，支持多种任务绑定方式和灵活的线程控制机制。通过 ThreadWrapper、Scheduler 和 ThreadPool，开发者可以高效地管理线程生命周期、调度任务并利用多核资源。
+
+
+## v0.1.2 行为更新与最佳实践
+
+### 周期任务请用 isStopRequested() 判断退出
+
+ThreadWrapper 新增公开方法 `isStopRequested()`，stop/restart 请求后立即返回 true。周期性任务的循环应以它为退出条件：
+
+```cpp
+tw.setTask([&tw]() {
+    while (!tw.isStopRequested()) {   // 推荐：立即响应停止请求
+        do_work();
+    }
+});
+```
+
+不要以 `getState() == ThreadState::STOPPED` 作为任务循环的退出条件——STOPPED
+状态要等 stop() 内部 join 完成后才写入，在任务循环里等它会造成任务与 stop()
+互相等待的死锁（v0.1.1 曾因此导致 Scheduler::shutdown 永久阻塞，已修复）。
+
+### 任务执行模型
+
+threadFunc 每次启动只执行一次绑定的任务；需要持续运行时请在任务内部自带循环
+（如上例）。暂停/恢复检查发生在任务调用之间，对运行中的单次任务不生效。
+
+### restart 已修复
+
+v0.1.2 之前 restart() 内部先 stop()（清空任务）再 start()（要求任务非空），
+顺序自相矛盾导致 restart 从未成功过。现已修复：restart 会保留当前绑定的任务，
+停止旧线程后以同一任务重新启动，可直接使用：
+
+```cpp
+tw.setTask(work);
+tw.start();
+// ...
+tw.restart();   // 以同一任务重新启动，无需重新 setTask
+```
