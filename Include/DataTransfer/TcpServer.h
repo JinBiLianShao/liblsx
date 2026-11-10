@@ -276,6 +276,8 @@ namespace LSX_LIB
              * 多次调用是安全的。
              */
             void closeClientConnection();
+            /// 内部实现：不加锁版本，仅供已持有 mtx 的成员函数调用（acceptConnection/close）
+            void closeClientConnectionUnlocked();
 
             /**
              * @brief 析构函数。

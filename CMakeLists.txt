@@ -137,6 +137,13 @@ install(DIRECTORY Include/
         PATTERN "*.h" PATTERN "*.hpp"
         PATTERN "SQL/SQLite3/sqlite3-*" EXCLUDE)
 
+# ===================== 测试套件（可选） =====================
+option(ENABLE_TESTS "Build and register the test suite" OFF)
+if (ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif ()
+
 # ===================== 构建信息汇总 =====================
 list(LENGTH SRC_FILES SRC_COUNT)
 message(STATUS "")

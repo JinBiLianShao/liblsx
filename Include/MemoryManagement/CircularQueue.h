@@ -173,6 +173,10 @@ namespace LSX_LIB {
              * @brief 互斥锁。
              * 用于保护队列的状态变量 (head_, tail_, current_size_) 和底层缓冲区 (data_vector_) 的并发访问。
              */
+            // ---- 不加锁内部检查：仅供已持有 mutex_ 的成员函数调用 ----
+            bool IsEmptyUnlocked() const { return current_size_ == 0; }
+            bool IsFullUnlocked() const { return (tail_ + 1) % capacity_ == head_; }
+
             mutable std::mutex mutex_; // Thread safety mutex
             // std::condition_variable cv_read_; // For potential blocking operations (commented out in provided code)
             // std::condition_variable cv_write_; // For potential blocking operations (commented out in provided code)
@@ -248,7 +252,7 @@ namespace LSX_LIB {
             // Returns true on success, false if full
             bool Enqueue(const T& value) {
                 std::lock_guard<std::mutex> lock(mutex_); // Thread safe enqueue
-                if (IsFull()) {
+                if (IsFullUnlocked()) {  // 已持锁，走不加锁内部检查（原实现重复加锁导致死锁）
                     // std::cout << "CircularQueue: Queue is full, cannot enqueue." << std::endl; // Use logging
                     return false;
                 }
@@ -281,7 +285,7 @@ namespace LSX_LIB {
             // Remove and return the element from the front (Dequeue / Get)
             std::optional<T> Dequeue() {
                 std::lock_guard<std::mutex> lock(mutex_); // Thread safe dequeue
-                if (IsEmpty()) {
+                if (IsEmptyUnlocked()) {  // 已持锁，走不加锁内部检查
                     // std::cout << "CircularQueue: Queue is empty, cannot dequeue." << std::endl; // Use logging
                     return std::nullopt; // Use std::optional
                 }
@@ -330,7 +334,7 @@ namespace LSX_LIB {
             // Check if the queue is empty
             bool IsEmpty() const {
                 std::lock_guard<std::mutex> lock(mutex_); // Thread safe empty
-                return current_size_ == 0; // Or head_ == tail_ and current_size_ == 0;
+                return IsEmptyUnlocked();
             }
 
             /**
@@ -341,8 +345,7 @@ namespace LSX_LIB {
             // Check if the queue is full
             bool IsFull() const {
                 std::lock_guard<std::mutex> lock(mutex_); // Thread safe full
-                // Standard check for circular queue full: tail is one position behind head (modulo capacity_)
-                return (tail_ + 1) % capacity_ == head_;
+                return IsFullUnlocked();
                 // Alternative using current_size_: return current_size_ == capacity_ - 1;
             }
 

@@ -219,7 +219,25 @@ arm32 同理，toolchain 前缀可通过 `-DARM32_TOOLCHAIN_PREFIX=...` 覆盖�
 make install   # 头文件按模块装入 <prefix>/include/lsx/，库装入 <prefix>/lib/
 ```
 
+## 测试（v0.1.2 新增）
+
+库根目录 tests/ 内置深度测试套件（53 个用例，覆盖全部五大模块）：
+```bash
+cmake .. -DENABLE_TESTS=ON && make -j
+ctest --test-dir build -R lsx_deep_tests   # 或直接运行 build/<platform>/bin/lsx_tests
+```
+覆盖内容：Thread 生命周期/调度/线程池并发、LockManager 全锁类型与死锁避免、
+Memory 全队列/管道/共享内存（含多线程压测）、DataTransfer TCP/UDP 回环与异常路径、
+Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复三个死锁/失效缺陷（见更新日志）。
+
 ## 更新日志
+
+### v0.1.2（2026-11-10）
+- **深度测试套件**：新增 tests/ 目录（自带极简测试框架），53 个用例覆盖五大模块，接入 CTest（-DENABLE_TESTS=ON），连续多次全量运行稳定通过。
+- **修复 TcpServer::acceptConnection 死锁**：持 mtx 锁期间调用 closeClientConnection() 再次加锁，std::mutex 不可重入，accept 永远执行不到。拆分出不加锁内部实现，accept/close 两条路径均修复。
+- **修复 CircularQueue 首次入队死锁**：Enqueue/Dequeue 持锁调用 IsFull/IsEmpty 再次加锁。新增 IsFullUnlocked/IsEmptyUnlocked 内部检查，公开 API 行为不变。
+- **修复 ThreadWrapper::restart 永远失效**：restart 内部先 stop()（清空 task_）再 start()（要求 task_ 非空），顺序矛盾导致 restart 从未成功过。现暂存并恢复任务后重新启动。
+- 测试直接驱动了以上三个缺陷的发现与回归验证。
 
 ### v0.1.1（2026-11-10）
 - **构建系统升级到 v3.0**：一次构建同时产出静态库与动态库（TARGET_TYPE=both，也可单独选）；交叉编译改走标准 toolchain 文件机制（内置 toolchains/x86、arm32、arm64.cmake，可覆盖前缀），不再在 CMakeLists 里硬编码编译器路径；产出物按平台归档到 build/<target>/{static,shared}/，动态库接入 SOVERSION（liblsx.so.0.1.1 软链）；源码收集改为只取 src/（旧版把 vendored 三方头也卷进 include 与 glob）；安装规则保留并经过 DESTDIR 实测。

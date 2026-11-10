@@ -99,16 +99,25 @@ namespace LSX_LIB::Thread
 
     void ThreadWrapper::restart(bool detached)
     {
+        // restart 语义：以当前已绑定的任务重新启动线程。
+        // stop() 会把 task_ 清空，这里先暂存任务，stop 后再恢复，否则 start()
+        // 因 !task_ 直接返回，restart 永远无法启动线程（原实现缺陷）。
+        std::function<void()> saved_task;
+        {
+            std::lock_guard<std::mutex> lk(mtx_);
+            saved_task = task_;
+        }
+
         stop(); // 先停止当前线程
-        // task_ 在 stop() 中被清理，restart 需要重新 setTask
-        // 在实际使用中，restart 后通常需要再次调用 setTask()
-        // 为了简化，此处假设 setTask() 会在 restart 之后立即调用
-        // 如果需要在 restart 中保留原任务，需要调整 stop() 的逻辑
-        // 例如：task_ 保持不变，在 threadFunc 退出前不清理 task_
-        // 或者在 restart 中重新绑定 task_
-        // 当前实现下，调用 restart 后必须再次调用 setTask 才能再次运行任务
-        // std::cerr << "Warning: Restart requires setTask() to be called again.\n";
-        // 更好的设计是在 restart 中接收任务参数，或者保存/恢复 task_
+
+        {
+            std::lock_guard<std::mutex> lk(mtx_);
+            if (!task_ && saved_task)
+            {
+                task_ = std::move(saved_task); // 恢复任务供 start 使用
+            }
+        }
+
         start(detached); // 重新启动新线程
     }
 

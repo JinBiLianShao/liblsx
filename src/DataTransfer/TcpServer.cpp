@@ -112,7 +112,7 @@ namespace LSX_LIB::DataTransfer
         }
 
         // 在接受新连接前关闭任何现有连接 (单客户端行为)
-        closeClientConnection(); // closeClientConnection 内部已加锁，此处不会死锁
+        closeClientConnectionUnlocked(); // 本方法已持有 mtx，直接走不加锁内部实现（原实现此处重复加锁导致死锁）
 
         struct sockaddr_in clientAddr;
         socklen_t len = sizeof(clientAddr);
@@ -321,10 +321,10 @@ namespace LSX_LIB::DataTransfer
         return true; // 所有数据发送完毕
     }
 
-    void TcpServer::closeClientConnection()
+    // 供已持有 mtx 锁的内部路径（如 acceptConnection）调用；
+    // 对外仍走 closeClientConnection()，那里加锁后转发到这里
+    void TcpServer::closeClientConnectionUnlocked()
     {
-        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
-
         if (connFd >= 0
 #ifdef _WIN32
         || connFd != INVALID_SOCKET
@@ -348,11 +348,18 @@ namespace LSX_LIB::DataTransfer
         }
     }
 
+    // 对外接口：加锁后转调不加锁实现（保持原 API 行为）
+    void TcpServer::closeClientConnection()
+    {
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        closeClientConnectionUnlocked();
+    }
+
     void TcpServer::close()
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        closeClientConnection(); // 先关闭已接受的连接 (closeClientConnection 内部已加锁，此处不会死锁)
+        closeClientConnectionUnlocked(); // 本方法已持有 mtx，直接走不加锁内部实现
 
         if (listenFd >= 0
 #ifdef _WIN32
