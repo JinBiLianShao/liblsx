@@ -21,7 +21,7 @@ if (NOT DEFINED PROJECT_NAME)
     set(PROJECT_NAME "lsx")
 endif ()
 project(${PROJECT_NAME}
-        VERSION 0.1.1
+        VERSION 0.2.0
         DESCRIPTION "LIBLSX - lightweight cross-platform C++ utility library"
         LANGUAGES C CXX)
 
