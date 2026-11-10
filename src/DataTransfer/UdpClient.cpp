@@ -1,7 +1,3 @@
-
-
-// ---------- File: UdpClient.cpp ----------
-#pragma once
 #include "UdpClient.h"
 #include <cstring>
 #include <limits>
@@ -80,7 +76,7 @@ namespace LSX_LIB::DataTransfer
             std::cerr << "UdpClient::send: Total data size exceeds maximum sendto chunk size." << std::endl;
             return false; // 数据过大，需要更高级的分块发送逻辑
         }
-        int intSize = static_cast<int>(size); // 重新确保 intSize 正确
+        // intSize 预留：当前分块发送逻辑按 size_t 循环处理
 
 
         while (totalSent < size)

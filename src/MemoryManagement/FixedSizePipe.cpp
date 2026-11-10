@@ -1,4 +1,3 @@
-#pragma once
 #include "FixedSizePipe.h"
 
 #include <cstring>

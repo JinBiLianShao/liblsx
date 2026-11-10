@@ -187,7 +187,19 @@ int main() { // Note: Logger instance lifecycle needs management in a real app.
 
 ## 项目状态与贡献
 
-- **当前版本**：v0.1.0（开发中）
+- **当前版本**：v0.1.1
+
+## 更新日志
+
+### v0.1.1（2026-11-10）
+- **修复 Scheduler::shutdown 死锁**：周期任务的退出条件从 getState() == STOPPED 改为 isStopRequested()。原实现中 STOPPED 状态要等 stop() 内部 join 完成后才写入，任务循环与 stop() 互相等待，shutdown 永久阻塞。ThreadWrapper 新增公开方法 isStopRequested() 供任务循环使用。
+- **代码结构清理**：移除 17 个 .cpp 文件中误用的 #pragma once（该指令只应出现在头文件）；清理重复 include 与缩进残缺。
+- **C++17 正统化**：ThreadPool::enqueue 统一使用 std::invoke_result_t，删除已废弃的 std::result_of 回退分支。
+- **构建系统现代化**：project() 声明版本与描述；启用 -Wall -Wextra -Wpedantic 警告基线（警告数 17 → 0）；新增 make install 安装规则（头文件 + 库，排除 vendored 预编译产物）。
+- **接口默认实现与预留参数显式化**：ICommunication 超时默认实现、SerialPort 通用超时等处的未使用参数以 (void) 标注并注明预留原因。
+
+### v0.1.0
+- 五大核心模块：Thread、DataTransfer、Memory、LockManager、Logger。
 - **待开发模块**：配置解析、异步任务队列等。
 - **欢迎贡献**：欢迎提交 Issue 或 PR，共同完善功能模块。请遵循项目的代码规范与协议。
 

@@ -1,0 +1,10 @@
+# 构建产物
+build/
+*.o
+*.a
+*.so
+
+# IDE
+.idea/
+.vscode/
+cmake-build-*/

@@ -247,6 +247,14 @@ namespace LSX_LIB
              */
             ThreadState getState() const { return state_.load(); }
 
+            /**
+             * @brief 查询是否已请求停止（stop/restart 请求后立即为 true）。
+             * @details 周期性任务的循环应以本方法作为退出条件，而不是等待
+             *          getState() == STOPPED——STOPPED 状态要等 stop() 内部 join
+             *          完成后才写入，任务循环里检查它会造成互相等待的死锁。
+             */
+            bool isStopRequested() const { return stopFlag_.load(); }
+
             // --- 扩展接口 ---
 
             /**

@@ -1,7 +1,3 @@
-
-
-// ---------- File: TcpClient.cpp ----------
-#pragma once
 #include "TcpClient.h"
 #include <cstring> // 包含 memset
 #include <limits> // 包含 numeric_limits
@@ -95,7 +91,7 @@ namespace LSX_LIB::DataTransfer
             std::cerr << "TcpClient::send: Total data size exceeds maximum send chunk size." << std::endl;
             return false; // 数据过大，需要更高级的分块发送逻辑
         }
-        int intSize = static_cast<int>(size); // 重新确保 intSize 正确
+        // intSize 预留：当前分块发送逻辑按 size_t 循环处理
 
 
         while (totalSent < size)

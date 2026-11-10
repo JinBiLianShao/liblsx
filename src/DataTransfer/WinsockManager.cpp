@@ -1,6 +1,3 @@
-
-// ---------- File: WinsockManager.cpp ----------
-#pragma once
 #include "WinsockManager.h"
 #include "GlobalErrorMutex.h" // 包含全局错误锁头文件
 

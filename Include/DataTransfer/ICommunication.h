@@ -166,7 +166,7 @@ namespace LSX_LIB
              * - > 0: 设置指定的超时时间。
              * @return 如果成功设置超时，返回 true；如果该通信类型不支持超时设置，返回 false。
              */
-            virtual bool setSendTimeout(int timeout_ms) { return false; }
+            virtual bool setSendTimeout(int timeout_ms) { (void)timeout_ms; return false; }
 
             /**
              * @brief 设置接收操作的超时时间。
@@ -178,7 +178,7 @@ namespace LSX_LIB
              * - > 0: 设置指定的超时时间。
              * @return 如果成功设置超时，返回 true；如果该通信类型不支持超时设置，返回 false。
              */
-            virtual bool setReceiveTimeout(int timeout_ms) { return false; }
+            virtual bool setReceiveTimeout(int timeout_ms) { (void)timeout_ms; return false; }
 
             /**
              * @brief 虚析构函数。

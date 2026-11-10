@@ -1,4 +1,3 @@
-#pragma once
 
 #include "Pipe.h"
 
@@ -159,6 +158,7 @@ namespace LSX_LIB {
 
 
         size_t Pipe::WriteBlocking(const uint8_t *data, size_t size, long timeout_ms) {
+            (void)timeout_ms; // 阻塞式写入：一直等到写出，timeout_ms 为预留参数
             if (data == nullptr || size == 0) {
                 return 0;
             }

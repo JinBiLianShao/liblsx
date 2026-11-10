@@ -1,7 +1,3 @@
-
-
-// ---------- File: UdpBroadcast.cpp ----------
-#pragma once
 #include "UdpBroadcast.h"
 #ifdef _WIN32
    #include <winsock2.h>

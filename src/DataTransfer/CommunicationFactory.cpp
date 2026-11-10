@@ -1,6 +1,3 @@
-
-// ---------- File: CommunicationFactory.cpp ----------
-#pragma once
 #include "CommunicationFactory.h"
 #include "UdpClient.h"
 #include "UdpServer.h"

@@ -1,4 +1,3 @@
-#pragma once
 #include "SharedMemory.h"
 
 #include <iostream>

@@ -1,7 +1,3 @@
-
-
-// ---------- File: UdpMulticast.cpp ----------
-#pragma once
 #include "UdpMulticast.h"
 #include <cstring>
 #include <limits>

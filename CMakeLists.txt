@@ -34,11 +34,14 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-# 项目名称与语言
+# 项目名称、版本与语言
 if (NOT DEFINED PROJECT_NAME)
     set(PROJECT_NAME "lsx")
 endif ()
-project(${PROJECT_NAME} LANGUAGES C CXX)
+project(${PROJECT_NAME}
+        VERSION 0.1.1
+        DESCRIPTION "LIBLSX - lightweight cross-platform C++ utility library"
+        LANGUAGES C CXX)
 
 # 构建类型默认值
 if (NOT CMAKE_BUILD_TYPE)
@@ -148,6 +151,11 @@ endif ()
 # 包含头文件路径
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 
+# 统一编译警告（库自身代码的质量基线）
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+endif ()
+
 # ===================== 链接库设置 =====================
 # 只有构建可执行文件时才链接系统库
 if (TARGET_TYPE STREQUAL "executable")
@@ -167,6 +175,18 @@ if (TARGET_TYPE STREQUAL "executable")
             LINK_WHAT_YOU_USE TRUE
     )
 endif ()
+
+# ===================== 安装规则（make install 分发头文件与库） =====================
+include(GNUInstallDirs)
+install(TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY Include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+        FILES_MATCHING
+        PATTERN "*.h" PATTERN "*.hpp"
+        PATTERN "SQL/SQLite3/sqlite3-*" EXCLUDE)
 
 # ===================== OpenMP 支持（可选） =====================
 option(ENABLE_OPENMP "Enable OpenMP parallelism" OFF)

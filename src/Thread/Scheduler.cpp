@@ -1,4 +1,3 @@
-#pragma once
 #include "Scheduler.h"
 #include <chrono>
 #include <iostream> // 用于可能的错误/调试输出
@@ -22,8 +21,8 @@ namespace LSX_LIB::Thread
                 // 注意：如果需要更精确的延迟且能响应停止，应使用条件变量的 timed_wait
                 std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
             }
-            // 在执行实际任务前检查停止标志
-            if (tw->getState() != ThreadState::STOPPED)
+            // 在执行实际任务前检查停止标志（以停止请求为准，原因同周期任务）
+            if (!tw->isStopRequested())
             {
                 try
                 {
@@ -71,8 +70,10 @@ namespace LSX_LIB::Thread
         // 捕获 tw 智能指针，以延长其生命周期
         tw->setTask([intervalMs, func, tw]()
         {
-            // 周期任务的循环是在这里实现的
-            while (tw->getState() != ThreadState::STOPPED)
+            // 周期任务的循环：以停止请求为退出条件。
+            // 不能检查 getState() == STOPPED——该状态在 stop() join 完成后才写入，
+            // 在任务循环里等它会造成任务与 stop() 互相等待的死锁。
+            while (!tw->isStopRequested())
             {
                 // 在执行任务前检查是否被暂停
                 // ThreadWrapper 的 threadFunc 会在 task_() 调用前处理暂停
@@ -101,7 +102,7 @@ namespace LSX_LIB::Thread
                 bool stopped_during_wait = false;
                 while (std::chrono::steady_clock::now() < end_wait)
                 {
-                    if (tw->getState() == ThreadState::STOPPED)
+                    if (tw->isStopRequested())
                     {
                         stopped_during_wait = true;
                         break;

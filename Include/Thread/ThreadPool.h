@@ -10,7 +10,7 @@
  * - ThreadPool(size_t numThreads = std::thread::hardware_concurrency()) : stop(false): 构造函数，创建指定数量的工作线程
  * - void enqueue(std::function<void()> task) override: 实现 IThreadPool 接口，将无返回值无参数的任务添加到任务队列中
  * - template<class F, class... Args>
- * auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>: 将任意可调用对象作为任务添加到任务队列中，并返回对应的 std::future 对象
+ * auto enqueue(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>>: 将任意可调用对象作为任务添加到任务队列中，并返回对应的 std::future 对象
  * - void shutdown() override: 实现 IThreadPool 接口，关闭线程池，并等待所有工作线程退出
  * - ~ThreadPool(): 析构函数，调用 shutdown() 方法
  *
@@ -91,7 +91,7 @@
 #include <atomic>
 #include <future>
 #include <utility> // For std::forward, std::move
-#include <type_traits> // For std::result_of (C++11/14), std::invoke_result (C++17+)
+#include <type_traits> // For std::invoke_result_t (C++17)
 
 // 包含 IThreadPool 接口定义
 #include "IThreadPool.h"
@@ -198,24 +198,13 @@ namespace LSX_LIB
              * @tparam Args 任务函数参数类型。
              * @param f 要执行的任务函数。
              * @param args 任务函数的参数。
-             * @return std::future<typename std::result_of<F(Args...)>::type> 返回任务的 future 对象，用于获取任务执行结果。
+             * @return std::future<std::invoke_result_t<F, Args...>> 返回任务的 future 对象，用于获取任务执行结果。
              */
             template <class F, class... Args>
-            auto enqueue(F&& f, Args&&... args) -> std::future<
-#if __cplusplus >= 201703L
-                std::invoke_result_t<F, Args...> // C++17 and later
-#else
-                typename std::result_of<F(Args...)>::type // C++11/14
-#endif
-            >
+            auto enqueue(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>>
             {
-                // 推导任务的返回类型
-                using return_type =
-#if __cplusplus >= 201703L
-                    std::invoke_result_t<F, Args...>; // C++17 and later
-#else
-                        typename std::result_of<F(Args...)>::type; // C++11/14
-#endif
+                // 推导任务的返回类型（库要求 C++17，统一走 invoke_result_t）
+                using return_type = std::invoke_result_t<F, Args...>;
 
 
                 // 将可调用对象及其参数绑定，并包装到 std::packaged_task 中

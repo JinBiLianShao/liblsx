@@ -1,6 +1,3 @@
-
-// ---------- File: GlobalErrorMutex.cpp ----------
-#pragma once
 #include "GlobalErrorMutex.h"
 
 namespace LSX_LIB::DataTransfer {

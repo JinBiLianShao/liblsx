@@ -1,7 +1,3 @@
-
-
-// ---------- File: UdpServer.cpp ----------
-#pragma once
 #include "UdpServer.h"
 #include <cstring>
 #include <limits>
@@ -72,6 +68,7 @@ namespace LSX_LIB::DataTransfer
 
     bool UdpServer::send(const uint8_t* data, size_t size)
     {
+        (void)data; (void)size; // UDP 服务器无目标地址，send 不适用（见下方说明）
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
         // 注意: 这个 send 方法不适用于典型的 UDP 服务器
         // 因为 ICommunication 接口没有提供目标地址。

@@ -1,6 +1,3 @@
-
-// ---------- File: SerialPort.cpp ----------
-#pragma once
 #include "SerialPort.h"
 #include <iostream> // 包含 std::cerr, std::cout
 #include <cstring> // 包含 memset
@@ -511,6 +508,7 @@ namespace LSX_LIB::DataTransfer
 
     bool SerialPort::setSendTimeout(int timeout_ms)
     {
+        (void)timeout_ms; // 通用毫秒超时未映射到 VTIME/VMIN，见下方注释说明
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
         // 串口的超时通常通过 VTIME/VMIN (POSIX) 或 COMMTIMEOUTS (Windows) 配置，
         // 直接映射到 ICommunication 的通用毫秒超时比较复杂，且行为可能不完全一致。
@@ -545,6 +543,7 @@ namespace LSX_LIB::DataTransfer
 
     bool SerialPort::setReceiveTimeout(int timeout_ms)
     {
+        (void)timeout_ms; // 通用毫秒超时未映射到 VTIME/VMIN，见下方注释说明
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
         // 串口的超时配置同上
         LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);// 锁定错误输出
