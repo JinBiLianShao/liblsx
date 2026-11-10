@@ -200,6 +200,12 @@ int main() { // Note: Logger instance lifecycle needs management in a real app.
 - **回调内安全**：回调中可嵌套 publish、subscribe、unsubscribe（含退订自己）。
 - **线程安全**：多线程并发发布串行分发，总线销毁自动使句柄失效。
 
+### 8. Serialize 模块（v0.3.0 新增）
+- **轻量二进制编解码**：小端固定宽度 + varint（LEB128）/zigzag + 长度前缀字符串 + TLV 字段（对齐 protobuf wire format）。
+- **无异常错误处理**：读取越界/格式错误置 fail 标志，适合解析不可信网络输入。
+- **协议演化**：TLV 未知字段自动跳过，新旧版本互操作。
+- **header-only**，与 DataTransfer 组合构成完整的设备间通信方案。
+
 ## 构建方式（v3.0 构建系统）
 
 ### 本机编译（同时产出静态库 + 动态库）
@@ -242,6 +248,13 @@ Memory 全队列/管道/共享内存（含多线程压测）、DataTransfer TCP/
 Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复三个死锁/失效缺陷（见更新日志）。
 
 ## 更新日志
+
+### v0.3.0（2026-11-10）
+- **新增 Serialize 模块**：header-only 二进制编解码（BinaryWriter/BinaryReader），支持小端固定宽度整数、varint/zigzag、长度前缀字符串与 TLV 字段（对齐 protobuf wire format）。面向嵌入式设备间通信协议，与 DataTransfer 组合使用。
+- **错误处理设计**：读取失败置 fail 标志返回零值，不抛异常——解析不可信网络输入只需最后统一检查。
+- **协议演化支持**：TLV 未知字段自动跳过，新旧版本写入方/读取方可互操作。
+- **Config 模块纳入测试**：INIReader 的解析、默认值、大小写不敏感、注释处理、错误报告首次获得用例覆盖。
+- **新增 26 个深度测试用例**（总计 109 个），三轮稳定性全过；arm64 交叉编译零警告。
 
 ### v0.2.0（2026-11-10）
 - **新增 Timer 模块**：TimerWheel（单工作线程驱动任意数量一次性/周期定时器，支持取消与回调内再调度）、Stopwatch、Deadline。对比 Scheduler 的"一任务一线程"模型，大规模定时场景资源占用大幅下降。
