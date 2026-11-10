@@ -46,6 +46,33 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 - **清晰的日志格式**：包含时间戳、线程ID、级别、代码位置 (文件、行号、函数) 和消息。
 - **便捷宏定义**：提供 `LSX_LOG_DEBUG`, `LSX_LOG_INFO` 等宏简化日志调用。
 
+### 6. Timer 模块（v0.2.0 新增）
+- **单线程多定时器**：TimerWheel 用一个工作线程驱动任意数量的定时器（一次性 + 周期），支持回调内取消自己/再次调度。
+- **计时工具**：Stopwatch（ms/us/秒）与 Deadline（超时判断/剩余时间）。
+- **对比 Scheduler**：定时器数量多时选 TimerWheel；需要暂停/恢复控制选 Scheduler。
+
+### 7. EventBus 模块（v0.2.0 新增）
+- **类型安全发布-订阅**：事件类型即路由键，publish 同步分发给全部订阅者。
+- **RAII 订阅句柄**：Subscription 析构自动退订，支持手动退订、句柄拷贝/移动。
+- **回调内安全**：回调中可嵌套 publish、subscribe、unsubscribe（含退订自己）。
+- **线程安全**：多线程并发发布串行分发，总线销毁自动使句柄失效。
+
+### 8. Serialize 模块（v0.3.0 新增）
+- **轻量二进制编解码**：小端固定宽度 + varint（LEB128）/zigzag + 长度前缀字符串 + TLV 字段（对齐 protobuf wire format）。
+- **无异常错误处理**：读取越界/格式错误置 fail 标志，适合解析不可信网络输入。
+- **协议演化**：TLV 未知字段自动跳过，新旧版本互操作。
+- **header-only**，与 DataTransfer 组合构成完整的设备间通信方案。
+
+### 9. IPC 模块（v0.4.0 新增，POSIX）
+- **Unix domain socket 封装**：IpcServer/IpcClient，接口风格与 DataTransfer 一致。
+- **RAII fd**：析构自动关闭；create 自动清理残留 socket 文件，close 自动删除。
+- **超时可控**：accept/receive/send 均支持 SO_RCVTIMEO/SO_SNDTIMEO。
+
+### 10. Result 模块（v0.4.0 新增）
+- **Result<T, E> 统一错误处理**：值或错误的二者取一（std::expected 的 C++17 过渡方案）。
+- **RAII 语义 + fail fast**：Err 状态访问 value() 立即 assert 暴露编程错误。
+- **void 特化 + valueOr + map**：覆盖"只关心成败"、默认值、链式变换三种场景。
+
 ## 快速开始
 
 ### 前置条件
@@ -56,8 +83,8 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 
 #### 线程任务调度
 ```cpp
-#include "LIBLSX/Thread/ThreadWrapper.h"
-#include "LIBLSX/Thread/Scheduler.h"
+#include "Thread/ThreadWrapper.h"
+#include "Thread/Scheduler.h"
 
 using namespace LIBLSX::Thread;
 
@@ -81,7 +108,7 @@ scheduler.shutdown();
 #### 网络通信
 
 ```cpp
-#include "LIBLSX/DataTransfer/CommunicationFactory.h"
+#include "DataTransfer/CommunicationFactory.h"
 
 using namespace LIBLSX;
 
@@ -97,8 +124,8 @@ if (tcp && tcp->create()) {
 #### 内存管理
 
 ```cpp
-#include "LIBLSX/Memory/FIFO.h"
-#include "LIBLSX/Memory/Pipe.h"
+#include "FIFO.h"
+#include "Pipe.h"
 
 using namespace LIBLSX::Memory;
 
@@ -117,7 +144,7 @@ std::vector<uint8_t> received = byte_pipe.Read(5);
 #### 锁管理 (LockManager)
 
 ```cpp
-#include "LIBLSX/LockManager/MultiLockGuard.h"
+#include "MultiLockGuard.h"
 #include <iostream>
 #include <thread>
 #include <mutex>
@@ -151,7 +178,7 @@ void transfer_funds(int amount, int& from_balance, int& to_balance, std::mutex& 
 #### 日志系统 (Logger)
 
 ```cpp
-#include "LIBLSX/Logger/Logger.h"
+#include "Logger.h"
 
 using namespace LIBLSX::Logger;
 
@@ -175,6 +202,91 @@ int main() { // Note: Logger instance lifecycle needs management in a real app.
 }
 ```
 
+#### 定时器（Timer）
+```cpp
+#include "Timer/Timer.h"
+
+LSX_LIB::Timer::TimerWheel timers;   // 一个线程驱动任意数量定时器
+timers.start();
+
+timers.scheduleOnce(500, []() {      // 一次性：500ms 后触发
+    std::cout << "timeout" << std::endl;
+});
+
+auto id = timers.schedulePeriodic(100, []() {   // 周期性：每 100ms
+    std::cout << "tick" << std::endl;
+});
+timers.cancel(id);                   // 随时取消
+
+LSX_LIB::Timer::Stopwatch sw;        // 计时
+std::cout << sw.elapsedMs() << "ms" << std::endl;
+
+timers.shutdown();
+```
+
+#### 事件总线（EventBus）
+```cpp
+#include "EventBus/EventBus.h"
+
+struct SensorData { int id; double value; };   // 事件类型即路由键
+
+LSX_LIB::EventBus::EventBus bus;
+auto sub = bus.subscribe<SensorData>([](const SensorData& e) {
+    std::cout << "sensor " << e.id << " = " << e.value << std::endl;
+});
+bus.publish(SensorData{1, 3.14});    // 同步分发给全部订阅者
+sub.unsubscribe();                   // 或让句柄析构自动退订
+```
+
+#### 二进制序列化（Serialize）
+```cpp
+#include "Serialize/Serialize.h"
+
+LSX_LIB::Serialize::BinaryWriter w;
+w.writeVarint(42);                           // 小数值 1 字节
+w.writeField(1, std::string("device-01"));   // TLV 字段（支持协议演化）
+w.writeF32(25.5f);
+
+LSX_LIB::Serialize::BinaryReader r(w.data().data(), w.size());
+auto v = r.readVarint();                     // 42
+auto f = r.readField();                      // tag=1 的字段
+// 读取失败不抛异常：r.fail() 统一检查
+```
+
+#### 本机进程间通信（IPC，POSIX）
+```cpp
+#include "IPC/IpcSocket.h"
+
+// 服务端
+LSX_LIB::IPC::IpcServer server("/tmp/lsx_demo.sock");
+server.create();
+server.acceptClient();                       // 阻塞等客户端
+server.send(data, len);
+
+// 客户端
+LSX_LIB::IPC::IpcClient client("/tmp/lsx_demo.sock");
+client.create();
+int n = client.receive(buf, sizeof(buf));
+```
+
+#### 统一错误处理（Result）
+```cpp
+#include "Result/Result.h"
+
+using LSX_LIB::Result::Result;
+using LSX_LIB::Result::Ok;
+using LSX_LIB::Result::Err;
+
+Result<int, std::string> parse(const std::string& s) {
+    if (s == "42") return Ok(42);
+    return Err("bad input");
+}
+
+auto r = parse("42");
+if (r.isOk()) std::cout << r.value();    // 42
+int port = parse("x").valueOr(8080);     // 失败给默认值
+```
+
 ## 模块文档
 
 | 模块          | 功能说明                              | 详细文档链接                                                                       |
@@ -184,37 +296,15 @@ int main() { // Note: Logger instance lifecycle needs management in a real app.
 | **Memory** | 内存管理与数据结构                    | [Memory 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FMemoryManagement%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Memory%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **LockManager**| RAII 锁管理与并发原语               | [LockManager 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example/LockManager/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20LockManager%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Logger** | 轻量级多功能日志系统                  | [Logger 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example/Logger/LSX_LIB%E5%B7%A5%E5%85%B7%E5%BA%93Logger%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Timer** | 单线程多定时器与计时工具             | [Timer 模块文档](example/Timer/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Timer%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **EventBus** | 类型安全发布-订阅事件总线            | [EventBus 模块文档](example/EventBus/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20EventBus%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Serialize** | 二进制序列化（varint/TLV）           | [Serialize 模块文档](example/Serialize/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Serialize%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **IPC** | 本机进程间通信（Unix domain socket） | [IPC 模块文档](example/IPC/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20IPC%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Result** | 统一错误处理类型                     | [Result 模块文档](example/Result/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Result%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 
 ## 项目状态与贡献
 
-- **当前版本**：v0.2.0
-
-### 6. Timer 模块（v0.2.0 新增）
-- **单线程多定时器**：TimerWheel 用一个工作线程驱动任意数量的定时器（一次性 + 周期），支持回调内取消自己/再次调度。
-- **计时工具**：Stopwatch（ms/us/秒）与 Deadline（超时判断/剩余时间）。
-- **对比 Scheduler**：定时器数量多时选 TimerWheel；需要暂停/恢复控制选 Scheduler。
-
-### 7. EventBus 模块（v0.2.0 新增）
-- **类型安全发布-订阅**：事件类型即路由键，publish 同步分发给全部订阅者。
-- **RAII 订阅句柄**：Subscription 析构自动退订，支持手动退订、句柄拷贝/移动。
-- **回调内安全**：回调中可嵌套 publish、subscribe、unsubscribe（含退订自己）。
-- **线程安全**：多线程并发发布串行分发，总线销毁自动使句柄失效。
-
-### 8. Serialize 模块（v0.3.0 新增）
-- **轻量二进制编解码**：小端固定宽度 + varint（LEB128）/zigzag + 长度前缀字符串 + TLV 字段（对齐 protobuf wire format）。
-- **无异常错误处理**：读取越界/格式错误置 fail 标志，适合解析不可信网络输入。
-- **协议演化**：TLV 未知字段自动跳过，新旧版本互操作。
-- **header-only**，与 DataTransfer 组合构成完整的设备间通信方案。
-
-### 9. IPC 模块（v0.4.0 新增，POSIX）
-- **Unix domain socket 封装**：IpcServer/IpcClient，接口风格与 DataTransfer 一致。
-- **RAII fd**：析构自动关闭；create 自动清理残留 socket 文件，close 自动删除。
-- **超时可控**：accept/receive/send 均支持 SO_RCVTIMEO/SO_SNDTIMEO。
-
-### 10. Result 模块（v0.4.0 新增）
-- **Result<T, E> 统一错误处理**：值或错误的二者取一（std::expected 的 C++17 过渡方案）。
-- **RAII 语义 + fail fast**：Err 状态访问 value() 立即 assert 暴露编程错误。
-- **void 特化 + valueOr + map**：覆盖"只关心成败"、默认值、链式变换三种场景。
+- **当前版本**：v0.4.0
 
 ## 构建方式（v3.0 构建系统）
 
