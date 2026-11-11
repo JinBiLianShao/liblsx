@@ -318,7 +318,7 @@ namespace LSX_LIB {
             // Get the element at the front without removing it (Peek)
             const T& Peek() const {
                 std::lock_guard<std::mutex> lock(mutex_); // Thread safe peek
-                if (IsEmpty()) {
+                if (IsEmptyUnlocked()) {   // 已持锁，走不加锁检查（IsEmpty 会重入死锁）
                     throw std::out_of_range("CircularQueue: Queue is empty, cannot peek");
                 }
                 return data_vector_[head_];

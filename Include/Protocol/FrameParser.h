@@ -27,9 +27,14 @@
  * // 串口收到数据后逐字节喂入
  * for (auto b : recv_bytes) parser.feed(b);
  * @endcode
+ 
+ *
+ * ### 线程安全 (@thread_safety)
+ * FrameParser 实例不可多线程共享（内部缓冲无锁）；回调在 feed() 调用者线程同步执行。
  */
 #pragma once
 
+#include <utility>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -83,12 +88,14 @@ public:
     /// 长度值表示"帧头+长度字段之后的剩余字节数"（含载荷与帧尾）。设置后不依赖帧尾。
     void setLengthField(std::size_t len_offset, std::size_t len_bytes)
     {
+        // len_bytes 仅支持 1/2/4（小端整型字段），其它值会在 declaredLength() 里造成位移 UB
+        if (len_bytes != 1 && len_bytes != 2 && len_bytes != 4) return;
         use_length_ = true;
         len_offset_ = len_offset;
         len_bytes_ = len_bytes;
     }
 
-    void onFrame(FrameCallback cb) { on_frame_ = std::move(cb); }
+    void onFrame(FrameCallback cb) { if (cb) on_frame_ = std::move(cb); }
 
     // ---- 喂入 ----
 

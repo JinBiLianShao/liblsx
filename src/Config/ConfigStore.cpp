@@ -210,19 +210,33 @@ bool ConfigStore::getBool(const std::string& section, const std::string& key,
 void ConfigStore::set(const std::string& section, const std::string& key,
                       const std::string& value)
 {
-    std::unique_lock<std::shared_mutex> lk(mtx_);   // 持锁调用内部方法，见下方注释
-    const auto k = makeKey(section, key);
-    std::string old = values_.count(k) ? values_[k] : std::string{};
-    values_[k] = value;
-    section_of_key_[k] = section;
-    ensureSection(section);
-    // applyBindingsAndNotify 假设锁已持有（避免 shared_mutex 重入）
-    auto bit = bindings_.find(k);
-    if (bit != bindings_.end()) bit->second(value);
-    if (old != value)
+    std::function<void(const std::string&)> binding;
+    std::vector<ChangeCallback> cbs;
+    std::string old;
+    bool changed = false;
+    {
+        // 锁内只改数据并收集待通知项；绑定同步与用户回调在锁外执行——
+        // 回调里调用 set/has/remove 等公开方法不会再造成 shared_mutex 重入死锁
+        std::unique_lock<std::shared_mutex> lk(mtx_);
+        const auto k = makeKey(section, key);
+        old = values_.count(k) ? values_[k] : std::string{};
+        values_[k] = value;
+        section_of_key_[k] = section;
+        ensureSection(section);
+        auto bit = bindings_.find(k);
+        if (bit != bindings_.end()) binding = bit->second;
+        changed = (old != value);
+        if (changed)
+        {
+            ChangeEvent ev{section, key, old, value};
+            for (auto& entry : callbacks_) if (entry.second) cbs.push_back(entry.second);
+        }
+    }
+    if (binding) binding(value);            // 绑定变量同步（写外部全局变量，无锁）
+    if (changed)
     {
         ChangeEvent ev{section, key, old, value};
-        for (auto& entry : callbacks_) if (entry.second) entry.second(ev);
+        for (auto& cb : cbs) if (cb) cb(ev); // 用户回调锁外执行
     }
 }
 
@@ -242,7 +256,6 @@ void ConfigStore::set(const std::string& section, const std::string& key, bool v
 void ConfigStore::applyBindingsAndNotify(const std::string& key, const std::string& old_value,
                                          const std::string& new_value)
 {
-    // 保留为内部扩展点：当前 set 内联实现以避免 shared_mutex 重入
     (void)key; (void)old_value; (void)new_value;
 }
 
@@ -262,15 +275,26 @@ bool ConfigStore::hasSection(const std::string& section) const
 
 bool ConfigStore::remove(const std::string& section, const std::string& key)
 {
-    std::unique_lock<std::shared_mutex> lk(mtx_);
-    const auto k = makeKey(section, key);
-    auto it = values_.find(k);
-    if (it == values_.end()) return false;
-    std::string old = it->second;
-    values_.erase(it);
-    ChangeEvent ev{section, key, old, {}};
-    for (auto& entry : callbacks_) if (entry.second) entry.second(ev);
-    return true;
+    std::vector<ChangeCallback> cbs;
+    std::string old;
+    bool existed = false;
+    {
+        std::unique_lock<std::shared_mutex> lk(mtx_);
+        const auto k = makeKey(section, key);
+        auto it = values_.find(k);
+        if (it == values_.end()) return false;
+        old = it->second;
+        values_.erase(it);
+        existed = true;
+        ChangeEvent ev{section, key, old, {}};
+        for (auto& entry : callbacks_) if (entry.second) cbs.push_back(entry.second);
+    }
+    if (existed)
+    {
+        ChangeEvent ev{section, key, old, {}};
+        for (auto& cb : cbs) if (cb) cb(ev);
+    }
+    return existed;
 }
 
 void ConfigStore::clear()

@@ -14,6 +14,10 @@
  * @author 连思鑫（jinbilianshao）
  * @date 2026-11-11
  * @version 1.0
+ 
+ *
+ * ### 线程安全 (@thread_safety)
+ * 全部函数为纯计算（无共享状态），天然线程安全；类形式（Crc32 等）实例内含状态，多线程请各自持实例。
  */
 #pragma once
 

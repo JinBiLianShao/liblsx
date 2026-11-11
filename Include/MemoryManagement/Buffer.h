@@ -159,20 +159,9 @@
              */
             ~Buffer() = default; // std::vector handles deallocation
 
-            // Copy and assignment are fine for Buffer (vector handles deep copy)
-            /**
-             * @brief 拷贝构造函数。
-             * 创建一个 Buffer 的拷贝，包含源缓冲区数据的深拷贝。
-             */
-            Buffer(const Buffer&) = default;
-            /**
-             * @brief 拷贝赋值运算符。
-             * 将源 Buffer 的内容深拷贝到当前缓冲区。
-             *
-             * @param other 源 Buffer 对象。
-             * @return 对当前 Buffer 对象的引用。
-             */
-            Buffer& operator=(const Buffer&) = default;
+            // 内部含 std::mutex：拷贝/移动无意义（此前 = default 声明实际已被编译器拒绝），显式删除以明示契约
+            Buffer(const Buffer&) = delete;
+            Buffer& operator=(const Buffer&) = delete;
             /**
              * @brief 移动构造函数。
              * 从源 Buffer 移动资源到当前缓冲区。

@@ -28,6 +28,10 @@
  * // valueOr：失败给默认值
  * int port = parse_port(cfg).valueOr(8080);
  * @endcode
+ 
+ *
+ * ### 线程安全 (@thread_safety)
+ * Result 值语义，多线程各自持有各自的实例即可；无共享状态。
  */
 #pragma once
 

@@ -259,7 +259,9 @@ namespace LSX_LIB {
              * 在对象销毁时自动调用 Detach()，如果此实例是创建者，还可能尝试调用 Destroy()。
              * 确保释放与共享内存相关的 OS 资源。
              */
-            ~SharedMemory(); // Destructor handles cleanup
+            /// @note 析构默认不销毁共享内存段（仅 Detach）；IsOwner() 时调用 Destroy()
+    ///       才会 IPC_RMID。多进程共享时请勿轻易 Destroy。
+    ~SharedMemory(); // Destructor handles cleanup (detach only, not destroy)
 
             // Prevent copying and assignment as managing OS resources is complex
             /**

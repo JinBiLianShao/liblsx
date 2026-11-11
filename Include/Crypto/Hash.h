@@ -11,6 +11,10 @@
  * @author 连思鑫（jinbilianshao）
  * @date 2026-11-11
  * @version 1.0
+ 
+ *
+ * ### 线程安全 (@thread_safety)
+ * 全部函数为纯计算（无共享状态），天然线程安全；constantTimeEquals 为常量时间比较。
  */
 #pragma once
 

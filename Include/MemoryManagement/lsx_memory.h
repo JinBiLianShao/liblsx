@@ -21,7 +21,7 @@
  * ### 使用示例
  *
  * @code
- * #include "LSX_Memory.h"
+ * #include "MemoryManagement/lsx_memory.h"
  * #include <iostream>
  *
  * int main() {
@@ -70,6 +70,8 @@
 #include "Pipe.h" // 管道 (模板)
 #include "Queue.h" // 队列 (模板)
 #include "SharedMemory.h" // 共享内存
+#include "BRAMMapper.h" // 物理内存映射
+#include "RegisterAccess.h" // devmem 寄存器读写
 
 
 #endif // LSX_LIB_MEMORY_LSX_MEMORY_H

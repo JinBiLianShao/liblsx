@@ -30,9 +30,14 @@
  * cfg.set("server", "port", 9090);           // set 也会同步到绑定变量
  * cfg.save("/etc/app.ini");
  * @endcode
+ 
+ *
+ * ### 线程安全 (@thread_safety)
+ * ConfigStore 内部 shared_mutex 保护；但 bind 绑定的外部变量不在锁内，多线程 set 与直接读变量需自行同步。用户回调在 set 调用者线程锁外执行。
  */
 #pragma once
 
+#include <utility>
 #include <cstdint>
 #include <functional>
 #include <map>

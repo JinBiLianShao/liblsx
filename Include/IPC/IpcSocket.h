@@ -30,9 +30,14 @@
  * client.send(data, len);
  * int n = client.receive(buf, sizeof(buf));
  * @endcode
+ 
+ *
+ * ### 线程安全 (@thread_safety)
+ * IpcServer/IpcClient 内部方法互斥（mtx_），同一实例可多线程调用；多线程并发 receive 会互斥串行。
  */
 #pragma once
 
+#include <utility>
 #include <atomic>
 #include <cstdint>
 #include <mutex>

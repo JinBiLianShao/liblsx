@@ -30,6 +30,7 @@
  */
 #pragma once
 
+#include <utility>
 #include <algorithm>
 #include <atomic>
 #include <cstdint>

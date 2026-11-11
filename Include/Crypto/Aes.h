@@ -11,6 +11,10 @@
  * @author 连思鑫（jinbilianshao）
  * @date 2026-11-11
  * @version 1.0
+ 
+ *
+ * ### 线程安全 (@thread_safety)
+ * Aes 实例的加密/解密方法仅读内部密钥，多线程可并发调用同一实例（tiny-AES ctx 为栈上局部对象）。
  */
 #pragma once
 

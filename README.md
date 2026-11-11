@@ -448,6 +448,14 @@ Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复�
 
 ### v0.6.0（2026-11-11）—— 配置模块 + 全库接口审查
 - **新增 ConfigStore 模块**：通用可读写配置（INI load/save + 类型安全 get/set + 全局变量绑定 bind + 变更回调 onChange + Result 错误 + shared_mutex 线程安全）。既有 INIReader 只读能力保持不变。
+- **全库接口审查**（62 个公共头文件）：系统扫描自包含性、命名一致性、const 正确性、RAII、多态析构、线程安全声明、危险 API。
+- **修复 27 个头文件不自包含**：跨模块扁平 include 统一改为带模块前缀路径（32 文件），62 头全部单独编译通过。
+- **修复 CircularQueue::Peek 残留死锁**：持锁调用 IsEmpty() 重入（v0.1.2 修复 Enqueue/Dequeue 时遗漏），改走 IsEmptyUnlocked()。
+- **修复 ConfigStore 回调重入死锁隐患**：set/remove 的绑定同步与用户回调改为锁外分发，回调内可安全调用 set/has/remove。
+- **FrameParser 加固**：setLengthField 校验 len_bytes ∈ {1,2,4}（其它值曾致位移 UB）；onFrame 拒绝空回调。
+- **接口契约显式化**：Buffer 拷贝/移动显式 delete（内部含 mutex，原 = default 实际被编译器拒绝）；SharedMemory 析构语义（仅 Detach 不销毁）文档化；8 个模块补 @thread_safety 线程安全声明；6 个头补缺失的 <utility>；lsx_memory.h 便利头补齐 BRAMMapper/RegisterAccess 并修正文档示例路径。
+- **新增 24 个深度测试**（ConfigStore 18 + 接口回归 6，总计 227），三轮稳定全过；三平台零警告交叉编译。
+- **新增 ConfigStore 模块**：通用可读写配置（INI load/save + 类型安全 get/set + 全局变量绑定 bind + 变更回调 onChange + Result 错误 + shared_mutex 线程安全）。既有 INIReader 只读能力保持不变。
 - **全库接口审查**：系统扫描 62 个公共头文件的自包含性、命名一致性、const 正确性、RAII、多态析构、危险 API。
 - **修复 27 个头文件不自包含的系统性缺陷**：跨模块扁平 include 统一改为带模块前缀路径（共 32 文件），现在 62 个公共头文件单独 include 全部编译通过。纯增量改动，源码兼容。
 - **新增 24 个深度测试**（ConfigStore 18 + 接口回归 6，总计 227），三轮稳定全过；三平台零警告交叉编译。

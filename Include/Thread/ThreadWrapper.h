@@ -121,6 +121,7 @@
 // 包含 LIBLSX::LockManager::LockGuard 头文件
 #include "LockManager/LockGuard.h"
 
+#include <utility>
 #include <thread> // 包含 std::thread
 #include <mutex> // 包含 std::mutex
 #include <condition_variable> // 包含 std::condition_variable
