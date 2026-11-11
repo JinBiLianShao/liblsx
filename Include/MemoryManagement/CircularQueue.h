@@ -80,10 +80,10 @@
  * std::cout << "All threads finished." << std::endl;
  * std::cout << "Final queue size: " << int_queue.Size() << std::endl;
  *
- * // 示例：使用 Peek
+ * // 示例：使用 Peek（v0.6.1 起返回 std::optional）
  * if (!int_queue.IsEmpty()) {
- * const int& peeked_value = int_queue.Peek();
- * std::cout << "Peeked at front value: " << peeked_value << std::endl;
+ * auto peeked_value = int_queue.Peek();
+ * if (peeked_value) std::cout << "Peeked at front value: " << *peeked_value << std::endl;
  * }
  *
  * // 示例：清空队列
@@ -99,8 +99,8 @@
  * - **固定可用容量**: 队列创建后，其可用容量是固定的。底层 vector 的实际大小是可用容量加一，用于区分满和空的状态。
  * - **非阻塞**: `Enqueue`/`Put` 和 `Dequeue`/`Get` 方法是非阻塞的。在队列满或空时会立即返回，而不是等待。如果需要阻塞行为，可以考虑在此基础上使用条件变量或使用专门的阻塞队列实现。
  * - **线程安全**: 所有公共方法都通过互斥锁保护，支持多线程访问。
- * - **数据复制/移动**: `Enqueue`/`Put` 涉及元素的复制或移动（取决于 T 的类型）。`Dequeue`/`Get` 返回元素的拷贝或移动后的值。`Peek` 返回常量引用。
- * - **异常处理**: 构造函数可能因容量为 0 抛出 `std::invalid_argument`，或因内存分配失败抛出 `std::bad_alloc`。`Peek` 在队列为空时抛出 `std::out_of_range`。其他非阻塞操作在失败时返回 false 或 std::nullopt。
+ * - **数据复制/移动**: `Enqueue`/`Put` 涉及元素的复制或移动（取决于 T 的类型）。`Dequeue`/`Get` 返回元素的拷贝或移动后的值。`Peek` 返回 std::optional<T>。
+ * - **异常处理**: 构造函数可能因容量为 0 抛出 `std::invalid_argument`，或因内存分配失败抛出 `std::bad_alloc`。`Peek` 在队列为空时返回 std::nullopt（v0.6.1 起不再抛异常，与 Dequeue 语义一致）。其他非阻塞操作在失败时返回 false 或 std::nullopt。
  * - **拷贝/移动**: 类禁用了拷贝构造和赋值，因为直接拷贝一个包含线程同步原语（mutex）和状态（head, tail, size）的队列通常是不安全或没有意义的。如果需要传递队列对象，应考虑使用智能指针（如 `std::shared_ptr`）。移动语义已默认启用。
  * - **底层实现细节**: 底层 vector 的大小比可用容量大 1 是循环队列的标准实现技巧，用于区分队列满和空的状态。
  */
@@ -316,12 +316,15 @@ namespace LSX_LIB {
              * @throws std::out_of_range 如果队列为空。
              */
             // Get the element at the front without removing it (Peek)
-            const T& Peek() const {
+            // v0.6.1：返回类型从 const T& 改为 std::optional<T>——
+            // 旧实现空队列抛 std::out_of_range，与 Dequeue 的 optional 语义不一致，
+            // 且异常路径在无异常环境（嵌入式）不可用。破坏性变更已记录在 README。
+            std::optional<T> Peek() const {
                 std::lock_guard<std::mutex> lock(mutex_); // Thread safe peek
                 if (IsEmptyUnlocked()) {   // 已持锁，走不加锁检查（IsEmpty 会重入死锁）
-                    throw std::out_of_range("CircularQueue: Queue is empty, cannot peek");
+                    return std::nullopt;
                 }
-                return data_vector_[head_];
+                return std::optional<T>(std::move(data_vector_[head_]));
             }
 
 
