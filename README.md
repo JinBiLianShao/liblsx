@@ -3,7 +3,9 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![C++17](https://img.shields.io/badge/C++-17-blue.svg)
 
-LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提供高效且易用的基础组件。当前已开发完成 **线程管理（Thread）**、**数据通信（DataTransfer）**、**内存管理（Memory）**、**锁管理（LockManager）** 和 **日志系统（Logger）** 五大核心模块。
+LIBLSX 是一个面向 **嵌入式 Linux** 的轻量级、自包含 C++17 通用工具库，提供 **17 个功能模块**：线程管理（Thread）、数据通信（DataTransfer）、内存管理（Memory）、锁管理（LockManager）、日志系统（Logger）、定时器（Timer）、事件总线（EventBus）、二进制序列化（Serialize）、本机进程间通信（IPC）、统一错误处理（Result）、板级总线（Bus: I2C/SPI）、协议帧解析（Protocol）、校验算法（Checksum）、加解密（Crypto）、压缩（Compress）、通用配置（ConfigStore）、状态机（StateMachine）。
+
+特点：C++17 单标准、header-only 与编译模块并存、第三方源码全部 vendor 随库编译（目标板无需额外安装动态库）、x86/arm32/arm64 三平台交叉编译零警告、**257 个深度测试用例**全部通过。当前版本 **v0.7.0**。
 
 ## 功能特性
 
@@ -397,20 +399,20 @@ auto g = LSX_LIB::Compress::gzipCompress(payload);      // 带 CRC32 校验
 | **Serialize** | 二进制序列化（varint/TLV）           | [Serialize 模块文档](example/Serialize/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Serialize%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **IPC** | 本机进程间通信（Unix domain socket） | [IPC 模块文档](example/IPC/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20IPC%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Result** | 统一错误处理类型                     | [Result 模块文档](example/Result/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Result%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
-
 | **Bus** | I2C / SPI 板级总线（Linux） | [Bus 模块文档](example/Bus/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Bus%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Protocol** | 通用协议帧解析（找帧头帧尾） | [Protocol 模块文档](example/Protocol/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Protocol%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Checksum** | CRC / 和校验 / 异或校验 | [Checksum 模块文档](example/Checksum/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Checksum%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Crypto** | AES / SHA-256 / HMAC / 编码 | [Crypto 模块文档](example/Crypto/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Crypto%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Compress** | DEFLATE / zlib / gzip / RLE | [Compress 模块文档](example/Compress/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Compress%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
-
 | **ConfigStore** | 可读写配置 + 全局变量绑定 | [ConfigStore 模块文档](example/Config/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20ConfigStore%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
-
 | **StateMachine** | 通用可扩展有限状态机 | [StateMachine 模块文档](example/StateMachine/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20StateMachine%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 
 ## 项目状态与贡献
 
 - **当前版本**：v0.7.0
+- **模块数**：17 个自研模块 + Config/INIReader 等既有组件
+- **测试用例**：257 个（三轮稳定全过）
+- **支持平台**：Linux x86 / arm32 / arm64（Windows 部分模块可用）
 
 ## 构建方式（v3.0 构建系统）
 
@@ -442,20 +444,46 @@ arm32 同理，toolchain 前缀可通过 `-DARM32_TOOLCHAIN_PREFIX=...` 覆盖�
 make install   # 头文件按模块装入 <prefix>/include/lsx/，库装入 <prefix>/lib/
 ```
 
-## 测试（v0.1.2 新增）
+## 测试（v0.1.2 引入，v0.7.0 扩展至 257 用例）
 
-库根目录 tests/ 内置深度测试套件（53 个用例，覆盖全部五大模块）：
-```bash
-cmake .. -DENABLE_TESTS=ON && make -j
-ctest --test-dir build -R lsx_deep_tests   # 或直接运行 build/<platform>/bin/lsx_tests
-```
-覆盖内容：Thread 生命周期/调度/线程池并发、LockManager 全锁类型与死锁避免、
-Memory 全队列/管道/共享内存（含多线程压测）、DataTransfer TCP/UDP 回环与异常路径、
-Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复三个死锁/失效缺陷（见更新日志）。
+库根目录 tests/ 内置深度测试套件，覆盖全部 17 个模块。详细编写与运行规范见 **[tests/README.md](tests/README.md)**。
+
+    mkdir -p build && cd build
+    cmake .. -DCOMPILER_TARGET=x86 -DTARGET_TYPE=both -DENABLE_TESTS=ON
+    make -j
+    ctest --output-on-failure          # 或直接 ./x86/bin/lsx_tests
+
+覆盖内容：
+
+| 测试文件 | 用例数 | 覆盖模块 |
+|----------|--------|----------|
+| test_thread.cpp | 16 | Thread 生命周期/调度/线程池并发 |
+| test_timer.cpp | 18 | TimerWheel/Stopwatch/Deadline |
+| test_datatransfer.cpp | 10 | TCP/UDP 回环、广播、多播、串口 |
+| test_lock.cpp | 9 | 全锁类型/Condition/MultiLockGuard |
+| test_memory.cpp | 14 | Buffer/Pipe/FIFO/队列/SharedMemory |
+| test_logger.cpp | 4 | 级别过滤/轮转/并发写入 |
+| test_eventbus.cpp | 12 | 发布订阅/嵌套分发/句柄语义 |
+| test_serialize.cpp | 20 | varint/TLV/损坏输入/协议演化 |
+| test_ipc.cpp | 9 | UDS 回环/大载荷/超时/断线 |
+| test_result.cpp | 12 | Result 全语义/void 特化/map |
+| test_bus.cpp | 17 | I2C/SPI 注入 fd 路径 |
+| test_protocol.cpp | 13 | 帧头帧尾/粘包半包/转义/校验 |
+| test_checksum.cpp | 10 | CRC8/16/32 标准向量 |
+| test_crypto.cpp | 19 | AES 标准向量/SHA-256/HMAC/编码 |
+| test_compress.cpp | 14 | DEFLATE/zlib/gzip/RLE 回环 |
+| test_config.cpp / test_configstore.cpp | 24 | INIReader 与 ConfigStore 绑定/回调 |
+| test_statemachine.cpp | 21 | 泛型 FSM/层次/超时/重入/并发 |
+| test_interfaces.cpp / test_gapfill.cpp | 15 | 头文件自包含/接口回归/补盲 |
+
+测试框架为库内自带的极简框架（tests/test_framework.h）：LSX_TEST(suite, name) 注册 + LSX_EXPECT_TRUE/EQ/NEAR 断言，无需外部依赖。测试曾直接暴露并推动修复多个死锁/失效缺陷（见更新日志）。
 
 ## 更新日志
 
-### v0.7.0（2026-11-11）—— 通用状态机模块
+### v0.7.0（2026-11-11）—— 通用状态机模块 + 文档体系完善
+- **文档体系完善**：README 开头更新为 17 模块全貌与嵌入式 Linux 定位；模块文档表修复断裂（合并为一张 17 行连续表）、补齐 StateMachine；测试章节从"53 用例/五大模块"更新为 257 用例完整覆盖清单；新增 **[tests/README.md](tests/README.md)** 测试套件使用说明（框架、编写规范、运行方式、扩展方法、常见问题）；修正许可证链接指向错误的 google 搜索。
+- **新增 StateMachine 模块**：StateMachine<State, Event, Context> 完全泛型 FSM（header-only），运行时扩展转换表、通配 ANY、层次状态（父子继承/子覆盖）、守卫与动作、自转换 UML 语义、超时转换（tick 主循环驱动 + 可选 TimerWheel 适配器）、转换历史/DOT 导出/观察钩子、重入 dispatch 排队、recursive_mutex 线程安全。
+- **新增 21 个深度测试**（总计 257），覆盖枚举/字符串/整数三种状态类型、守卫拒绝、通配优先级、层次回退、超时重排、重入排队、并发 4x100、DOT 导出、TimerWheel 集成；三轮稳定全过，三平台零警告交叉编译。
 - **新增 StateMachine 模块**：StateMachine<State, Event, Context> 完全泛型 FSM（header-only），运行时扩展转换表、通配 ANY、层次状态（父子继承/子覆盖）、守卫与动作、自转换 UML 语义、超时转换（tick 主循环驱动 + 可选 TimerWheel 适配器）、转换历史/DOT 导出/观察钩子、重入 dispatch 排队、recursive_mutex 线程安全。
 - **新增 21 个深度测试**（总计 257），覆盖枚举/字符串/整数三种状态类型、守卫拒绝、通配优先级、层次回退、超时重排、重入排队、并发 4x100、DOT 导出、TimerWheel 集成；三轮稳定全过，三平台零警告交叉编译。
 
@@ -523,4 +551,4 @@ Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复�
 
 ## 许可证
 
-本项目采用 **MIT 许可证**。详情请参阅 [LICENSE](https://www.google.com/search?q=LICENSE) 文件。
+本项目采用 **MIT 许可证**。详情请参阅 [LICENSE](LICENSE) 文件。
