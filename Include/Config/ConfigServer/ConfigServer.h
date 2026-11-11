@@ -15,9 +15,9 @@
 #include <map>
 #include <atomic>        // ADDED: 用于 std::atomic，确保线程安全的数据标志
 
-#include <httplib.h>               // HTTP库，用于创建HTTP服务器 (cpp-httplib)
-#include "json.hpp"       // JSON库，用于处理JSON数据 (nlohmann/json)
-#include "SQLiteDB.h"              // SQLite数据库操作类 (您提供的头文件)
+#include "Http/httplib.h"               // HTTP库，用于创建HTTP服务器 (cpp-httplib)
+#include "Http/json.hpp"       // JSON库，用于处理JSON数据 (nlohmann/json)
+#include "SQL/SQLite3/SQLiteDB.h"              // SQLite数据库操作类 (您提供的头文件)
 
 // 使用 httplib 和 nlohmann/json 的命名空间简化代码
 using namespace httplib;

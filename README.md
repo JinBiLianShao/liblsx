@@ -96,6 +96,12 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 - **DEFLATE / zlib / gzip**（vendored miniz，MIT）+ **RLE**。
 - 自动扩容解压、CRC32 完整性校验，失败返回空 vector 不抛异常。
 
+### 16. ConfigStore 模块（v0.6.0 新增）
+- **通用可读写配置**：INI 文件 load/save，类型安全 get/set（int/double/bool/string）。
+- **全局变量绑定**：bind(section, key, &globalVar)，load 或 set 时自动同步到全局变量。
+- **变更回调**：onChange 通知配置改动，配合 EventBus 做运行时重载。
+- **Result 错误处理 + shared_mutex 线程安全**，与既有 INIReader 只读能力并存。
+
 ## 快速开始
 
 ### 前置条件
@@ -362,6 +368,14 @@ auto raw = LSX_LIB::Compress::zlibDecompress(z);
 auto g = LSX_LIB::Compress::gzipCompress(payload);      // 带 CRC32 校验
 ```
 
+#### 通用配置（ConfigStore）
+    int g_port = 8080;
+    LSX_LIB::Config::ConfigStore cfg;
+    cfg.bind("server", "port", &g_port, 8080);
+    cfg.load("/etc/app.ini");
+    cfg.set("server", "port", 9090);
+    cfg.save("/etc/app.ini");
+
 ## 模块文档
 
 | 模块          | 功能说明                              | 详细文档链接                                                                       |
@@ -383,9 +397,11 @@ auto g = LSX_LIB::Compress::gzipCompress(payload);      // 带 CRC32 校验
 | **Crypto** | AES / SHA-256 / HMAC / 编码 | [Crypto 模块文档](example/Crypto/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Crypto%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Compress** | DEFLATE / zlib / gzip / RLE | [Compress 模块文档](example/Compress/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Compress%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 
+| **ConfigStore** | 可读写配置 + 全局变量绑定 | [ConfigStore 模块文档](example/Config/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20ConfigStore%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+
 ## 项目状态与贡献
 
-- **当前版本**：v0.5.0
+- **当前版本**：v0.6.0
 
 ## 构建方式（v3.0 构建系统）
 
@@ -429,6 +445,12 @@ Memory 全队列/管道/共享内存（含多线程压测）、DataTransfer TCP/
 Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复三个死锁/失效缺陷（见更新日志）。
 
 ## 更新日志
+
+### v0.6.0（2026-11-11）—— 配置模块 + 全库接口审查
+- **新增 ConfigStore 模块**：通用可读写配置（INI load/save + 类型安全 get/set + 全局变量绑定 bind + 变更回调 onChange + Result 错误 + shared_mutex 线程安全）。既有 INIReader 只读能力保持不变。
+- **全库接口审查**：系统扫描 62 个公共头文件的自包含性、命名一致性、const 正确性、RAII、多态析构、危险 API。
+- **修复 27 个头文件不自包含的系统性缺陷**：跨模块扁平 include 统一改为带模块前缀路径（共 32 文件），现在 62 个公共头文件单独 include 全部编译通过。纯增量改动，源码兼容。
+- **新增 24 个深度测试**（ConfigStore 18 + 接口回归 6，总计 227），三轮稳定全过；三平台零警告交叉编译。
 
 ### v0.5.0（2026-11-11）—— 嵌入式 Linux 专项迭代
 - **新增 Bus 模块**：I2C（I2C_RDWR）/ SPI（SPI_IOC_MESSAGE）Linux 用户态封装，RAII fd、Result 错误、可注入 fd 便于无硬件测试。

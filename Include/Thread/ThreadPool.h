@@ -78,9 +78,9 @@
 #define KKTRAFFIC_THREADPOOL_H
 #pragma once
 // 包含全局错误锁头文件
-#include "GlobalErrorMutex.h"
+#include "DataTransfer/GlobalErrorMutex.h"
 // 包含 LIBLSX::LockManager::LockGuard 头文件
-#include "LockGuard.h"
+#include "LockManager/LockGuard.h"
 #include <iostream>
 #include <queue>
 #include <thread>

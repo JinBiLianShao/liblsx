@@ -114,9 +114,9 @@
 #define LSX_LIB_MEMORY_FIXED_SIZE_QUEUE_H
 #pragma once
 // 包含全局错误锁头文件
-#include "GlobalErrorMutex.h"
+#include "DataTransfer/GlobalErrorMutex.h"
 // 包含 LSX_LIB::LockManager::LockGuard 头文件
-#include "LockGuard.h"
+#include "LockManager/LockGuard.h"
 #include <vector> // For std::vector
 #include <cstdint> // For uint8_t
 #include <optional> // For std::optional (C++17)

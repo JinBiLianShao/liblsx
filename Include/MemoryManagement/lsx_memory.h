@@ -56,9 +56,9 @@
 #define LSX_LIB_MEMORY_LSX_MEMORY_H
 #pragma once
 // 包含全局错误锁头文件
-#include "GlobalErrorMutex.h"
+#include "DataTransfer/GlobalErrorMutex.h"
 // 包含 LSX_LIB::LockManager::LockGuard 头文件
-#include "LockGuard.h"
+#include "LockManager/LockGuard.h"
 // 主头文件，包含所有内存模块的头文件
 
 #include "Buffer.h" // 通用内存缓冲区

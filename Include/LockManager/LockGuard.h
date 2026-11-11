@@ -23,7 +23,7 @@
  * ### 使用示例
  *
  * @code
- * #include "LockGuard.h" // 包含 LockGuard 类定义
+ * #include "LockManager/LockGuard.h" // 包含 LockGuard 类定义
  * #include <iostream>
  * #include <thread>
  * #include <mutex>

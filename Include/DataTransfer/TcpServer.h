@@ -155,9 +155,9 @@
 #define LSX_TCP_SERVER_H
 #pragma once
 // 包含全局错误锁头文件
-#include "GlobalErrorMutex.h"
+#include "DataTransfer/GlobalErrorMutex.h"
 // 包含 LIBLSX::LockManager::LockGuard 头文件
-#include "LockGuard.h"
+#include "LockManager/LockGuard.h"
 #include "ICommunication.h" // 包含通信接口基类
 
 // 根据平台包含相应的头文件
@@ -178,7 +178,7 @@
 
 #include <iostream> // For std::cerr (错误输出)
 #include <mutex> // 包含 std::mutex (用于线程同步)
-#include "GlobalErrorMutex.h" // 包含全局错误锁头文件 (用于同步错误输出)
+#include "DataTransfer/GlobalErrorMutex.h" // 包含全局错误锁头文件 (用于同步错误输出)
 
 
 /**

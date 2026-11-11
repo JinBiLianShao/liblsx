@@ -20,7 +20,7 @@
  * ### 使用示例
  *
  * @code
- * #include "MultiLockGuard.h" // 包含 MultiLockGuard 类定义
+ * #include "LockManager/MultiLockGuard.h" // 包含 MultiLockGuard 类定义
  * #include <iostream>
  * #include <thread>
  * #include <mutex>

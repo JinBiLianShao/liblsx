@@ -74,9 +74,9 @@
 #define LSX_WINSOCK_MANAGER_H
 #pragma once
 // 包含全局错误锁头文件
-#include "GlobalErrorMutex.h"
+#include "DataTransfer/GlobalErrorMutex.h"
 // 包含 LIBLSX::LockManager::LockGuard 头文件
-#include "LockGuard.h"
+#include "LockManager/LockGuard.h"
 
 // 仅在 Windows 平台下包含 Winsock 头文件和定义 WinsockManager
 #ifdef _WIN32
@@ -87,7 +87,7 @@
 #include <iostream> // 用于错误输出 (std::cerr)
 #include <mutex> // 用于保护错误输出 (std::mutex)
 
-#include "GlobalErrorMutex.h" // 包含全局错误锁头文件 (用于同步错误输出)
+#include "DataTransfer/GlobalErrorMutex.h" // 包含全局错误锁头文件 (用于同步错误输出)
 
 /**
  * @brief LSX 库的根命名空间。

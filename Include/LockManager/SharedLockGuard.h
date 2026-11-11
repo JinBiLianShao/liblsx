@@ -23,7 +23,7 @@
  * ### 使用示例
  *
  * @code
- * #include "SharedLockGuard.h" // 包含 SharedLockGuard 类定义
+ * #include "LockManager/SharedLockGuard.h" // 包含 SharedLockGuard 类定义
  * #include <iostream>
  * #include <thread>
  * #include <shared_mutex> // For std::shared_mutex, std::shared_timed_mutex

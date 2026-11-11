@@ -19,7 +19,7 @@
  * ### 使用示例
  *
  * @code
- * #include "Condition.h" // 包含 Condition 类定义
+ * #include "LockManager/Condition.h" // 包含 Condition 类定义
  * #include <iostream>
  * #include <thread>
  * #include <mutex>
