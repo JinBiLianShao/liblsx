@@ -73,6 +73,29 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 - **RAII 语义 + fail fast**：Err 状态访问 value() 立即 assert 暴露编程错误。
 - **void 特化 + valueOr + map**：覆盖"只关心成败"、默认值、链式变换三种场景。
 
+### 11. Bus 模块（v0.5.0 新增，嵌入式 Linux）
+- **I2C / SPI 总线封装**：基于 /dev/i2c-N 与 /dev/spidevX.Y 的 ioctl，寄存器读写/全双工传输。
+- **RAII + Result**：fd 自动管理，错误携带 errno 说明。
+- **可注入 fd**：无真实硬件也能跑测试（socketpair 回显）。
+
+### 12. Protocol 模块（v0.5.0 新增）
+- **流式帧解析**：帧头帧尾 / 长度字段 / 转义字节 / 校验回调四种配置。
+- **天然处理粘包半包**：逐字节 feed，状态机切帧，超长/校验失败自动丢弃。
+- **无动态分配**，与 Checksum、Serialize 直接组合。
+
+### 13. Checksum 模块（v0.5.0 新增）
+- **CRC8 / CRC16-Modbus / CRC16-CCITT-FALSE / CRC32**，标准向量全部验证。
+- **sum8 / xor8 / Fletcher16**，增量式接口，constexpr 表驱动零依赖。
+
+### 14. Crypto 模块（v0.5.0 新增）
+- **AES-128/192/256**（ECB/CBC/CTR，PKCS#7 填充），vendored tiny-AES-c（Unlicense）。
+- **SHA-256 / HMAC-SHA256 / Base64 / Hex**，库内纯实现，标准向量验证。
+- **零外部动态库依赖**，目标板自包含。
+
+### 15. Compress 模块（v0.5.0 新增）
+- **DEFLATE / zlib / gzip**（vendored miniz，MIT）+ **RLE**。
+- 自动扩容解压、CRC32 完整性校验，失败返回空 vector 不抛异常。
+
 ## 快速开始
 
 ### 前置条件
@@ -287,6 +310,58 @@ if (r.isOk()) std::cout << r.value();    // 42
 int port = parse("x").valueOr(8080);     // 失败给默认值
 ```
 
+#### 板级总线（Bus，嵌入式 Linux）
+```cpp
+#include "Bus/Bus.h"
+
+LSX_LIB::Bus::I2cBus i2c("/dev/i2c-1", 0x48);
+i2c.open();
+auto temp = i2c.readRegister8(0x00);       // Result<uint8_t>
+if (temp.isOk()) use(temp.value());
+
+LSX_LIB::Bus::SpiBus spi("/dev/spidev0.0");
+spi.open(); spi.setMode(0); spi.setSpeedHz(1000000);
+auto rx = spi.transfer({0x01, 0x02});      // 全双工
+```
+
+#### 协议帧解析（Protocol）
+```cpp
+#include "Protocol/FrameParser.h"
+
+LSX_LIB::Protocol::FrameParser parser;
+parser.setHeader({0xAA, 0x55});
+parser.setEnder({0x0D, 0x0A});
+parser.onFrame([](const std::uint8_t* f, std::size_t n) { handle(f, n); });
+for (auto b : recv_bytes) parser.feed(b);  // 天然处理粘包/半包
+```
+
+#### 校验算法（Checksum）
+```cpp
+#include "Checksum/Checksum.h"
+
+auto crc = LSX_LIB::Checksum::Crc32::calc(data, len);   // 标准向量验证
+auto modbus = LSX_LIB::Checksum::Crc16Modbus::calc(frame, n);
+```
+
+#### 加解密与摘要（Crypto）
+```cpp
+#include "Crypto/lsx_crypto.h"
+
+LSX_LIB::Crypto::Aes aes(std::vector<std::uint8_t>(16, 0x2B));
+auto c = aes.encrypt(plain, LSX_LIB::Crypto::AesMode::CBC, iv);
+auto h = LSX_LIB::Crypto::sha256Hex("abc");             // ba7816bf...15ad
+auto mac = LSX_LIB::Crypto::hmacSha256Hex("key", data);
+```
+
+#### 压缩（Compress）
+```cpp
+#include "Compress/Compress.h"
+
+auto z = LSX_LIB::Compress::zlibCompress(payload);
+auto raw = LSX_LIB::Compress::zlibDecompress(z);
+auto g = LSX_LIB::Compress::gzipCompress(payload);      // 带 CRC32 校验
+```
+
 ## 模块文档
 
 | 模块          | 功能说明                              | 详细文档链接                                                                       |
@@ -302,9 +377,15 @@ int port = parse("x").valueOr(8080);     // 失败给默认值
 | **IPC** | 本机进程间通信（Unix domain socket） | [IPC 模块文档](example/IPC/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20IPC%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 | **Result** | 统一错误处理类型                     | [Result 模块文档](example/Result/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Result%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 
+| **Bus** | I2C / SPI 板级总线（Linux） | [Bus 模块文档](example/Bus/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Bus%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Protocol** | 通用协议帧解析（找帧头帧尾） | [Protocol 模块文档](example/Protocol/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Protocol%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Checksum** | CRC / 和校验 / 异或校验 | [Checksum 模块文档](example/Checksum/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Checksum%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Crypto** | AES / SHA-256 / HMAC / 编码 | [Crypto 模块文档](example/Crypto/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Crypto%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+| **Compress** | DEFLATE / zlib / gzip / RLE | [Compress 模块文档](example/Compress/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Compress%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+
 ## 项目状态与贡献
 
-- **当前版本**：v0.4.0
+- **当前版本**：v0.5.0
 
 ## 构建方式（v3.0 构建系统）
 
@@ -348,6 +429,15 @@ Memory 全队列/管道/共享内存（含多线程压测）、DataTransfer TCP/
 Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复三个死锁/失效缺陷（见更新日志）。
 
 ## 更新日志
+
+### v0.5.0（2026-11-11）—— 嵌入式 Linux 专项迭代
+- **新增 Bus 模块**：I2C（I2C_RDWR）/ SPI（SPI_IOC_MESSAGE）Linux 用户态封装，RAII fd、Result 错误、可注入 fd 便于无硬件测试。
+- **新增 Protocol 模块**：通用流式帧解析（帧头帧尾/长度字段/转义/校验回调），处理粘包半包与超长帧。
+- **新增 Checksum 模块**：CRC8/16-Modbus/16-CCITT-FALSE/32 + sum8/xor8/Fletcher16，标准向量验证，增量式接口。
+- **新增 Crypto 模块**：AES-128/192/256（ECB/CBC/CTR，vendored tiny-AES-c Unlicense）、SHA-256、HMAC-SHA256、Base64/Hex、常量时间比较。
+- **新增 Compress 模块**：DEFLATE/zlib/gzip（vendored miniz MIT）+ RLE，自动扩容解压与完整性校验。
+- **vendor 策略**：所有第三方源码随库编译（宽松许可证），arm32/arm64 交叉编译零外部动态库依赖。
+- **新增 73 个深度测试用例**（总计 203），三轮稳定性全过；三平台（x86/arm64/arm32）零警告交叉编译；miniz 流式解压的 MZ_FINISH 陷阱、AES 三密钥长度多实例编译均经测试验证。
 
 ### v0.4.0（2026-11-10）
 - **新增 IPC 模块**：Unix domain socket 封装（IpcServer/IpcClient），接口与 DataTransfer 一致，RAII fd 管理，残留 socket 文件自动清理，accept/receive/send 全部支持超时。POSIX 平台。

@@ -21,7 +21,7 @@ if (NOT DEFINED PROJECT_NAME)
     set(PROJECT_NAME "lsx")
 endif ()
 project(${PROJECT_NAME}
-        VERSION 0.4.0
+        VERSION 0.5.0
         DESCRIPTION "LIBLSX - lightweight cross-platform C++ utility library"
         LANGUAGES C CXX)
 
@@ -50,10 +50,28 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PLATFORM_OUTPUT_DIR}/bin")
 
 # ===================== 源文件与头文件收集 =====================
 # 只收集库自身源码；Include/ 下的 vendored 头（httplib/json/sqlite）是给下游用的，不参与编译
+# v0.5.0 起 src/third_party/ 下的 vendor C 源码（AES/miniz）随库一起编译，自包含无外部 .so
 file(GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp")
+# vendor 的 AES/miniz 实现含 .c 文件，一并收集（作为 C++ 编译，与库内其它源码一致）
+file(GLOB_RECURSE SRC_C_FILES "${CMAKE_SOURCE_DIR}/src/*.c")
+list(APPEND SRC_FILES ${SRC_C_FILES})
+# miniz 3.x 把 ZIP 归档实现单独放在 miniz_zip.c；本库只用 DEFLATE，
+# 排除它以减小体积并避免归档符号进入库（需保留 miniz.c/tdef/tinfl）
+list(FILTER SRC_FILES EXCLUDE REGEX ".*/miniz_zip\.c$")
+add_compile_definitions(MINIZ_NO_ARCHIVE_APIS MINIZ_NO_STDIO)
+# vendor miniz 在 32 位平台有两处恒假比较（size_t 范围导致），仅对 vendor 文件静音该警告
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${SRC_C_FILES}
+        PROPERTIES COMPILE_OPTIONS "-Wno-type-limits")
+endif ()
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/CMakeFiles/.*")
 
 set(INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/Include")
+# vendor C 头目录（AES/miniz），仅供库内 .cpp 编译使用
+list(APPEND INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/Include/third_party/tiny-AES"
+        "${CMAKE_SOURCE_DIR}/Include/third_party/miniz")
 # 头文件采用跨模块扁平 include（如 #include "ThreadPool.h"），需把各模块目录都加进路径
 file(GLOB_RECURSE LIB_HEADERS "${CMAKE_SOURCE_DIR}/Include/*.h" "${CMAKE_SOURCE_DIR}/Include/*.hpp")
 foreach (_hdr ${LIB_HEADERS})
