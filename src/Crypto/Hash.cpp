@@ -205,7 +205,15 @@ std::string base64Encode(const std::uint8_t* data, std::size_t len)
 
 std::vector<std::uint8_t> base64Decode(const std::string& text)
 {
-    if (text.size() % 4 != 0) return {};
+    // v0.7.1: 先剥离空白（换行/回车/空格/制表符）
+    std::string compact;
+    compact.reserve(text.size());
+    for (char c : text)
+    {
+        if (c == 10 || c == 13 || c == 32 || c == 9) continue;
+        compact.push_back(c);
+    }
+    const std::string& text2 = compact;
     std::vector<std::uint8_t> out;
     out.reserve((text.size() / 4) * 3);
     auto val = [](char c) -> int {
