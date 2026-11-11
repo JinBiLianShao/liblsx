@@ -102,6 +102,13 @@ LIBLSX 是一个轻量级、跨平台的 C++ 工具库，旨在为开发者提�
 - **变更回调**：onChange 通知配置改动，配合 EventBus 做运行时重载。
 - **Result 错误处理 + shared_mutex 线程安全**，与既有 INIReader 只读能力并存。
 
+### 17. StateMachine 模块（v0.7.0 新增）
+- **完全泛型**：State/Event 可为枚举/字符串/整数/自定义类型，Context 为业务数据引用。
+- **可扩展**：转换表运行时注册；通配 ANY 转换；层次状态（父子继承 + 子覆盖）。
+- **守卫与动作**：guard/onEntry/onExit/transition action/全局观察钩子；自转换按 UML 触发 exit+entry。
+- **超时转换**：内建 tick() 主循环驱动，或可选 TimerWheel 适配器自动时钟驱动。
+- **可观测**：转换历史环形缓冲、toDot() 导出 Graphviz；重入 dispatch 排队不递归；recursive_mutex 线程安全。
+
 ## 快速开始
 
 ### 前置条件
@@ -399,9 +406,11 @@ auto g = LSX_LIB::Compress::gzipCompress(payload);      // 带 CRC32 校验
 
 | **ConfigStore** | 可读写配置 + 全局变量绑定 | [ConfigStore 模块文档](example/Config/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20ConfigStore%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
 
+| **StateMachine** | 通用可扩展有限状态机 | [StateMachine 模块文档](example/StateMachine/LIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20StateMachine%20%E6%A8%A1%E5%9D%97%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md) |
+
 ## 项目状态与贡献
 
-- **当前版本**：v0.6.0
+- **当前版本**：v0.7.0
 
 ## 构建方式（v3.0 构建系统）
 
@@ -445,6 +454,10 @@ Memory 全队列/管道/共享内存（含多线程压测）、DataTransfer TCP/
 Logger 级别过滤/轮转/并发写入。测试曾直接暴露并推动修复三个死锁/失效缺陷（见更新日志）。
 
 ## 更新日志
+
+### v0.7.0（2026-11-11）—— 通用状态机模块
+- **新增 StateMachine 模块**：StateMachine<State, Event, Context> 完全泛型 FSM（header-only），运行时扩展转换表、通配 ANY、层次状态（父子继承/子覆盖）、守卫与动作、自转换 UML 语义、超时转换（tick 主循环驱动 + 可选 TimerWheel 适配器）、转换历史/DOT 导出/观察钩子、重入 dispatch 排队、recursive_mutex 线程安全。
+- **新增 21 个深度测试**（总计 257），覆盖枚举/字符串/整数三种状态类型、守卫拒绝、通配优先级、层次回退、超时重排、重入排队、并发 4x100、DOT 导出、TimerWheel 集成；三轮稳定全过，三平台零警告交叉编译。
 
 ### v0.6.0（2026-11-11）—— 配置模块 + 全库接口审查
 - **新增 ConfigStore 模块**：通用可读写配置（INI load/save + 类型安全 get/set + 全局变量绑定 bind + 变更回调 onChange + Result 错误 + shared_mutex 线程安全）。既有 INIReader 只读能力保持不变。
