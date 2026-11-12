@@ -215,7 +215,7 @@ std::vector<std::uint8_t> base64Decode(const std::string& text)
     }
     const std::string& text2 = compact;
     std::vector<std::uint8_t> out;
-    out.reserve((text.size() / 4) * 3);
+    out.reserve((text2.size() / 4) * 3);
     auto val = [](char c) -> int {
         if (c >= 'A' && c <= 'Z') return c - 'A';
         if (c >= 'a' && c <= 'z') return c - 'a' + 26;
@@ -224,11 +224,11 @@ std::vector<std::uint8_t> base64Decode(const std::string& text)
         if (c == '/') return 63;
         return -1;
     };
-    for (std::size_t i = 0; i < text.size(); i += 4)
+    for (std::size_t i = 0; i < text2.size(); i += 4)
     {
-        int a = val(text[i]), b = val(text[i+1]);
-        int c = (text[i+2] == '=') ? -2 : val(text[i+2]);
-        int d = (text[i+3] == '=') ? -2 : val(text[i+3]);
+        int a = val(text2[i]), b = val(text2[i+1]);
+        int c = (text2[i+2] == '=') ? -2 : val(text2[i+2]);
+        int d = (text2[i+3] == '=') ? -2 : val(text2[i+3]);
         if (a < 0 || b < 0 || c == -1 || d == -1) return {};
         if (c == -2 && d != -2) return {};   // 非法 padding 顺序
         std::uint32_t v = (static_cast<std::uint32_t>(a) << 18) |
