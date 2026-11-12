@@ -42,9 +42,8 @@ namespace LSX_LIB {
 
             size_t bytes_to_write = size; // In unbounded pipe, write all
 
-            for (size_t i = 0; i < bytes_to_write; ++i) {
-                byte_stream_.push_back(data[i]);
-            }
+            // 批量插入代替逐字节 push_back：一次区间 insert，避免 n 次函数调用开销
+            byte_stream_.insert(byte_stream_.end(), data, data + bytes_to_write);
             // std::cout << "Pipe: Wrote " << bytes_to_write << " bytes." << std::endl; // Use logging
 
             cv_read_.notify_all(); // Notify readers (all waiting readers might be able to read now)
@@ -67,10 +66,9 @@ namespace LSX_LIB {
 
             size_t bytes_to_read = std::min(size, byte_stream_.size());
 
-            for (size_t i = 0; i < bytes_to_read; ++i) {
-                buffer[i] = byte_stream_.front();
-                byte_stream_.pop_front();
-            }
+            // 批量复制 + 一次区间 erase，代替逐字节 front/pop_front（每次 O(n) 前移）
+            std::copy(byte_stream_.begin(), byte_stream_.begin() + bytes_to_read, buffer);
+            byte_stream_.erase(byte_stream_.begin(), byte_stream_.begin() + bytes_to_read);
             // std::cout << "Pipe: Read " << bytes_to_read << " bytes." << std::endl; // Use logging
 
             // cv_write_.notify_all(); // Notify writers (if bounded pipe and space was freed)
@@ -93,9 +91,8 @@ namespace LSX_LIB {
 
             size_t bytes_to_peek = std::min(size, byte_stream_.size());
 
-            for (size_t i = 0; i < bytes_to_peek; ++i) {
-                buffer[i] = byte_stream_[i]; // Access directly
-            }
+            // 批量复制代替逐字节访问
+            std::copy_n(byte_stream_.begin(), bytes_to_peek, buffer);
             // std::cout << "Pipe: Peeked " << bytes_to_peek << " bytes." << std::endl; // Use logging
             return bytes_to_peek;
         }
@@ -140,10 +137,8 @@ namespace LSX_LIB {
 
             // Now read, similar to non-blocking Read
             size_t bytes_to_read = std::min(size, byte_stream_.size());
-            for (size_t i = 0; i < bytes_to_read; ++i) {
-                buffer[i] = byte_stream_.front();
-                byte_stream_.pop_front();
-            }
+            std::copy(byte_stream_.begin(), byte_stream_.begin() + bytes_to_read, buffer);
+            byte_stream_.erase(byte_stream_.begin(), byte_stream_.begin() + bytes_to_read);
             // std::cout << "Pipe: ReadBlocking got " << bytes_to_read << " bytes." << std::endl; // Use logging
             // cv_write_.notify_all(); // Notify writers (if bounded pipe)
             return bytes_to_read;
@@ -176,9 +171,7 @@ namespace LSX_LIB {
 
             size_t bytes_to_write = size; // In unbounded pipe, write all
 
-            for (size_t i = 0; i < bytes_to_write; ++i) {
-                byte_stream_.push_back(data[i]);
-            }
+            byte_stream_.insert(byte_stream_.end(), data, data + bytes_to_write);
             // std::cout << "Pipe: WriteBlocking put " << bytes_to_write << " bytes." << std::endl; // Use logging
             cv_read_.notify_all(); // Notify readers
 

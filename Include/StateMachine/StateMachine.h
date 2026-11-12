@@ -247,21 +247,23 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lk(mtx_);
         time_ms_ = now_ms;
-        // 同一状态可注册多个超时：逐个触发所有到期项，
-        // 旧实现只保留第一个匹配的超时，其余静默丢失。
-        std::size_t fired = 0;
-        for (auto it = active_timeouts_.begin(); it != active_timeouts_.end(); )
+        // 先快照所有到期事件，再统一派发。
+        // 不能边遍历 active_timeouts_ 边 dispatch：dispatch 里的状态转换会
+        // 调 armTimeoutsForCurrent() 清空整个 vector，使循环持有的迭代器
+        // 失效（UB），且后续到期项被静默丢失。
+        std::vector<Event> due;
+        due.reserve(active_timeouts_.size());
+        std::size_t keep = 0;
+        for (std::size_t i = 0; i < active_timeouts_.size(); ++i)
         {
-            if (now_ms >= it->due_ms)
-            {
-                Event e = it->event;
-                it = active_timeouts_.erase(it);
-                dispatch(e);
-                ++fired;
-            }
-            else ++it;
+            if (now_ms >= active_timeouts_[i].due_ms)
+                due.push_back(active_timeouts_[i].event);
+            else
+                active_timeouts_[keep++] = active_timeouts_[i];
         }
-        return fired;
+        active_timeouts_.resize(keep);
+        for (const auto& e : due) dispatch(e);
+        return due.size();
     }
 
     // ---- 查询 ----

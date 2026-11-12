@@ -85,11 +85,16 @@ LSX_TEST(ReviewFix, StateMachineExceptionRecovers) {
     bool fired = false;
     fsm.addTransition(S::Idle, E::Start, S::Running, {},
                       [&](Ctx&) { fired = true; throw std::runtime_error("boom"); });
+    // 另注册一条转换：异常恢复后必须还能完成正常派发，才能证明 pumping_ 已复位
+    fsm.addTransition(S::Idle, E::Other, S::Running);
     try { fsm.dispatch(E::Start); } catch (...) {}
     LSX_EXPECT_TRUE(fired);
+    // 关键断言：异常后 dispatch 不得返回 Busy（Busy 意味着 pumping_ 卡死）。
+    // 旧测试只断言 currentState()==Idle——该值在异常中断时本就是 Idle，
+    // 即使状态机永久卡死也恒真，无法捕获回归。
     auto r = fsm.dispatch(E::Other);
-    (void)r;
-    LSX_EXPECT_TRUE(fsm.currentState() == S::Idle);
+    LSX_EXPECT_TRUE(r == StateMachine::TransitionResult::Ok);
+    LSX_EXPECT_TRUE(fsm.currentState() == S::Running);
 }
 
 // #8 loadFromString 解析失败不得污染旧配置
@@ -133,4 +138,40 @@ LSX_TEST(ReviewFix, RleDecodeBounded) {
     std::vector<std::uint8_t> good{0x41, 3, 0x42, 2};
     auto g = Compress::rleDecode(good);
     LSX_EXPECT_EQ(g.size(), static_cast<std::size_t>(5));
+}
+
+// #14 回归：同状态多个超时在 tick() 内应全部触发，且超时引发状态转换时
+// 不得因 active_timeouts_ 被清空而丢失后续到期项（迭代器失效 bug）。
+LSX_TEST(ReviewFix, TickFiresAllDueTimeoutsAcrossTransition) {
+    enum class S { Idle, Running };
+    enum class E { T1, T2 };
+    struct Ctx {};
+    Ctx ctx;
+    StateMachine::StateMachine<S, E, Ctx> fsm(S::Idle, ctx);
+    fsm.addTimeout(S::Idle, 100, E::T1);
+    fsm.addTimeout(S::Idle, 100, E::T2);
+    fsm.addTransition(S::Idle, E::T1, S::Running);  // T1 离开 Idle，触发 armTimeouts 清空
+
+    // 两个超时同时到期：都必须派发（fired == 2），T2 无匹配转换也计入派发数。
+    std::size_t fired = fsm.tick(200);
+    LSX_EXPECT_EQ(fired, static_cast<std::size_t>(2));
+    LSX_EXPECT_TRUE(fsm.currentState() == S::Running);
+}
+
+// #14 回归：自转换（exit+entry）同样会重排超时，tick 不得丢事件
+LSX_TEST(ReviewFix, TickFiresAllDueTimeoutsOnSelfTransition) {
+    enum class S { Idle, Running };
+    enum class E { T1, T2 };
+    struct Ctx { int n = 0; };
+    Ctx ctx;
+    StateMachine::StateMachine<S, E, Ctx> fsm(S::Idle, ctx);
+    fsm.addTimeout(S::Idle, 100, E::T1);
+    fsm.addTimeout(S::Idle, 100, E::T2);
+    fsm.addTransition(S::Idle, E::T1, S::Idle, {}, [](Ctx& c) { ++c.n; });  // 自转换
+    fsm.addTransition(S::Idle, E::T2, S::Running);
+
+    std::size_t fired = fsm.tick(200);
+    LSX_EXPECT_EQ(fired, static_cast<std::size_t>(2));
+    LSX_EXPECT_EQ(ctx.n, 1);
+    LSX_EXPECT_TRUE(fsm.currentState() == S::Running);
 }

@@ -100,11 +100,11 @@ namespace LSX_LIB::DataTransfer
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        if (listenFd < 0
 #ifdef _WIN32
-        || listenFd == INVALID_SOCKET
+        if (listenFd == INVALID_SOCKET)
+#else
+        if (listenFd < 0)
 #endif
-        )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] TcpServer::acceptConnection: Listen socket not created or closed." << std::endl;
@@ -121,11 +121,11 @@ namespace LSX_LIB::DataTransfer
         connFd = accept(listenFd,
                         reinterpret_cast<struct sockaddr*>(&clientAddr), &len);
 
-        if (connFd < 0
 #ifdef _WIN32
-        || connFd == INVALID_SOCKET
+        if (connFd == INVALID_SOCKET)
+#else
+        if (connFd < 0)
 #endif
-        )
         {
 #ifdef _WIN32
         int err = WSAGetLastError();
@@ -178,11 +178,11 @@ namespace LSX_LIB::DataTransfer
         // 修改了函数签名
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        if (connFd < 0
 #ifdef _WIN32
-        || connFd == INVALID_SOCKET
+        if (connFd == INVALID_SOCKET)
+#else
+        if (connFd < 0)
 #endif
-        )
         {
             // 注意: 在这个单客户端设计中，如果没接受客户端，这是一个错误。
             // 用户必须先调用 acceptConnection()。
@@ -248,11 +248,11 @@ namespace LSX_LIB::DataTransfer
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        if (connFd < 0
 #ifdef _WIN32
-       || connFd == INVALID_SOCKET
+        if (connFd == INVALID_SOCKET)
+#else
+        if (connFd < 0)
 #endif
-        )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] TcpServer::send: No client connection accepted." << std::endl;
@@ -393,11 +393,11 @@ namespace LSX_LIB::DataTransfer
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
         // 将超时应用于已接受的连接 socket
-        if (connFd < 0
 #ifdef _WIN32
-        || connFd == INVALID_SOCKET
+        if (connFd == INVALID_SOCKET)
+#else
+        if (connFd < 0)
 #endif
-        )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] TcpServer::setSendTimeout: No client connection accepted." << std::endl;
@@ -429,11 +429,11 @@ namespace LSX_LIB::DataTransfer
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
         // 将超时应用于已接受的连接 socket
-        if (connFd < 0
 #ifdef _WIN32
-        || connFd == INVALID_SOCKET
+        if (connFd == INVALID_SOCKET)
+#else
+        if (connFd < 0)
 #endif
-        )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] TcpServer::setReceiveTimeout: No client connection accepted." << std::endl;

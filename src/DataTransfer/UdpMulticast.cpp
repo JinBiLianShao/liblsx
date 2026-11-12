@@ -136,11 +136,11 @@ namespace LSX_LIB::DataTransfer
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        if (sockfd < 0
 #ifdef _WIN32
-    || sockfd == INVALID_SOCKET
+        if (sockfd == INVALID_SOCKET)
+#else
+        if (sockfd < 0)
 #endif
-        )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] UdpMulticast::send: Socket not created or closed." << std::endl;
@@ -194,11 +194,11 @@ namespace LSX_LIB::DataTransfer
         // 修改了函数签名
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        if (sockfd < 0
 #ifdef _WIN32
-    || sockfd == INVALID_SOCKET
+        if (sockfd == INVALID_SOCKET)
+#else
+        if (sockfd < 0)
 #endif
-        )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] UdpMulticast::receive: Socket not created or closed." << std::endl;
@@ -307,11 +307,11 @@ namespace LSX_LIB::DataTransfer
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        if (sockfd < 0
 #ifdef _WIN32
-    || sockfd == INVALID_SOCKET
+        if (sockfd == INVALID_SOCKET)
+#else
+        if (sockfd < 0)
 #endif
-        )
             return false;
 
 #ifdef _WIN32
@@ -339,11 +339,11 @@ namespace LSX_LIB::DataTransfer
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
 
-        if (sockfd < 0
 #ifdef _WIN32
-    || sockfd == INVALID_SOCKET
+        if (sockfd == INVALID_SOCKET)
+#else
+        if (sockfd < 0)
 #endif
-        )
             return false;
 
 #ifdef _WIN32
