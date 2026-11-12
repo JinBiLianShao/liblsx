@@ -251,6 +251,11 @@ public:
         // 不能边遍历 active_timeouts_ 边 dispatch：dispatch 里的状态转换会
         // 调 armTimeoutsForCurrent() 清空整个 vector，使循环持有的迭代器
         // 失效（UB），且后续到期项被静默丢失。
+        // 注意（快照语义）：到期事件按快照时的状态收集，统一派发时若前面的
+        // 事件已让状态转换，后续事件仍会在【新状态】下派发——这是"全部到期
+        // 事件都得到处理"的既定取舍。若某事件只应在原状态生效，请在 guard
+        // 或 action 里自行检查 currentState()。tick() 返回派发总数（含这类
+        // 在新状态下无匹配转换的事件）。
         std::vector<Event> due;
         due.reserve(active_timeouts_.size());
         std::size_t keep = 0;
