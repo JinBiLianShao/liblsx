@@ -12,7 +12,7 @@ Logger::Logger(const LoggerConfig& config)
       config_max_lines_(config.maxLines > 0 ? config.maxLines : 1000), // 确保max_lines有效
       current_output_mode_(config.mode) {
     if (config_filepath_.empty() && config.mode == OutputMode::File) {
-        std::cerr << "Logger Warning: File output mode selected but no filepath provided. Defaulting to 'app.log'." << std::endl;
+        std::cerr << "[LIBLSX] Logger Warning: File output mode selected but no filepath provided. Defaulting to 'app.log'." << std::endl;
         config_filepath_ = "app.log";
     }
     SetOutputMode(config.mode); // 根据初始配置设置输出器
@@ -38,7 +38,7 @@ void Logger::Log(LogLevel msg_level,
         writer_->Write(formatted_msg);
     } else {
         // 备用输出，例如当 writer_ 意外为空时
-        std::cerr << "Logger Error: Log writer is not initialized. Message: " << formatted_msg << std::endl;
+        std::cerr << "[LIBLSX] Logger Error: Log writer is not initialized. Message: " << formatted_msg << std::endl;
     }
 }
 
@@ -60,11 +60,11 @@ void Logger::SetOutputMode(OutputMode mode) {
     } else { // OutputMode::File
         if (config_filepath_.empty()) {
              // 这种情况理论上已在构造函数中处理，但作为安全检查
-            std::cerr << "Logger Error: Cannot switch to File output mode. Filepath is empty." << std::endl;
+            std::cerr << "[LIBLSX] Logger Error: Cannot switch to File output mode. Filepath is empty." << std::endl;
             // 可以选择切换回控制台或保持无输出状态
             writer_ = std::make_unique<ConsoleWriter>(); // 回退到控制台
             current_output_mode_ = OutputMode::Console;
-            std::cerr << "Logger Warning: Switched back to Console output due to empty filepath." << std::endl;
+            std::cerr << "[LIBLSX] Logger Warning: Switched back to Console output due to empty filepath." << std::endl;
             return;
         }
         writer_ = std::make_unique<FileWriter>(config_filepath_, config_max_lines_);

@@ -19,7 +19,7 @@ uint8_t* FixedSizePipe::get_block_address(size_t index) {
      // No lock here, assumes caller holds the lock
     if (index >= block_count_) {
          // This should not happen if head_ and tail_ are managed correctly
-         std::cerr << "FixedSizePipe: get_block_address called with out-of-bounds index: " << index << std::endl;
+         std::cerr << "[LIBLSX] FixedSizePipe: get_block_address called with out-of-bounds index: " << index << std::endl;
          throw std::out_of_range("FixedSizePipe: Block index out of range in get_block_address.");
     }
     return buffer_.data() + index * block_size_;
@@ -28,7 +28,7 @@ uint8_t* FixedSizePipe::get_block_address(size_t index) {
 const uint8_t* FixedSizePipe::get_block_address(size_t index) const {
     // No lock here, assumes caller holds the lock
     if (index >= block_count_) {
-         std::cerr << "FixedSizePipe: get_block_address (const) called with out-of-bounds index: " << index << std::endl;
+         std::cerr << "[LIBLSX] FixedSizePipe: get_block_address (const) called with out-of-bounds index: " << index << std::endl;
          throw std::out_of_range("FixedSizePipe: Block index out of range in get_block_address (const).");
     }
     return buffer_.data() + index * block_size_;
@@ -47,7 +47,7 @@ FixedSizePipe::FixedSizePipe(size_t block_size, size_t block_count)
         //           << ", block_count=" << block_count_
         //           << ", total_size=" << buffer_.size() << std::endl;
     } catch (const std::bad_alloc& e) {
-        std::cerr << "FixedSizePipe: Failed to allocate buffer: " << e.what() << std::endl;
+        std::cerr << "[LIBLSX] FixedSizePipe: Failed to allocate buffer: " << e.what() << std::endl;
         buffer_.clear();
         block_size_ = 0;
         block_count_ = 0;

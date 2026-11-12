@@ -62,7 +62,7 @@ namespace LSX_LIB::Thread
             catch (const std::system_error& e)
             {
                 // 捕获 join 可能抛出的异常，例如 std::system_error
-                std::cerr << "Error joining thread: " << e.what() << std::endl;
+                std::cerr << "[LIBLSX] Error joining thread: " << e.what() << std::endl;
             }
         }
 
@@ -176,13 +176,13 @@ namespace LSX_LIB::Thread
             catch (const std::exception& e)
             {
                 // 捕获任务执行中可能抛出的异常
-                std::cerr << "Task execution failed: " << e.what() << std::endl;
+                std::cerr << "[LIBLSX] Task execution failed: " << e.what() << std::endl;
                 // 可以选择在这里设置 stopFlag_ 终止线程，或者记录日志后继续 (取决于设计)
                 stopFlag_.store(true); // 例如，任务失败后停止线程
             } catch (...)
             {
                 // 捕获其他未知异常
-                std::cerr << "Task execution failed with unknown error." << std::endl;
+                std::cerr << "[LIBLSX] Task execution failed with unknown error." << std::endl;
                 stopFlag_.store(true); // 例如，任务失败后停止线程
             }
 

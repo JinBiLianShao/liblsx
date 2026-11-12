@@ -19,7 +19,7 @@ namespace LSX_LIB
         {
             if (index >= block_count_)
             {
-                std::cerr << "FixedSizeQueue: get_block_address called with out-of-bounds index: " << index <<
+                std::cerr << "[LIBLSX] FixedSizeQueue: get_block_address called with out-of-bounds index: " << index <<
                     std::endl;
                 throw std::out_of_range(
                     "FixedSizeQueue: Block index out of range in get_block_address. This indicates a logical error in head/tail management.");
@@ -31,7 +31,7 @@ namespace LSX_LIB
         {
             if (index >= block_count_)
             {
-                std::cerr << "FixedSizeQueue: get_block_address (const) called with out-of-bounds index: " << index <<
+                std::cerr << "[LIBLSX] FixedSizeQueue: get_block_address (const) called with out-of-bounds index: " << index <<
                     std::endl;
                 throw std::out_of_range(
                     "FixedSizeQueue: Block index out of range in get_block_address (const). This indicates a logical error in head/tail management.");
@@ -56,7 +56,7 @@ namespace LSX_LIB
             }
             catch (const std::bad_alloc& e)
             {
-                std::cerr << "FixedSizeQueue: Failed to allocate buffer: " << e.what() << std::endl;
+                std::cerr << "[LIBLSX] FixedSizeQueue: Failed to allocate buffer: " << e.what() << std::endl;
                 buffer_.clear();
                 block_size_ = 0;
                 block_count_ = 0;

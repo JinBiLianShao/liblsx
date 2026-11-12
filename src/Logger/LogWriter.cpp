@@ -39,7 +39,7 @@ void FileWriter::OpenFile() {
     // 我们采用每次 Write 时判断并 rotate 的方式，所以初始打开即可。
     file_stream_.open(filepath_, std::ios::out | std::ios::app); // 追加模式打开，RotateLogs会处理截断
     if (!file_stream_.is_open()) {
-        std::cerr << "Error: Could not open log file: " << filepath_ << std::endl;
+        std::cerr << "[LIBLSX] Error: Could not open log file: " << filepath_ << std::endl;
     }
 }
 
@@ -48,7 +48,7 @@ void FileWriter::Write(const std::string& text) {
         // 尝试重新打开文件，如果之前打开失败
         OpenFile();
         if (!file_stream_.is_open()) {
-            std::cerr << "Error: Log file " << filepath_ << " is not open. Cannot write log." << std::endl;
+            std::cerr << "[LIBLSX] Error: Log file " << filepath_ << " is not open. Cannot write log." << std::endl;
             return; // 无法写入，直接返回
         }
     }
@@ -84,7 +84,7 @@ void FileWriter::RotateLogs() {
     }
     
     if (!file_stream_.is_open()) {
-        std::cerr << "Error: Could not open log file for rotation: " << filepath_ << std::endl;
+        std::cerr << "[LIBLSX] Error: Could not open log file for rotation: " << filepath_ << std::endl;
         return;
     }
 

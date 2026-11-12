@@ -39,7 +39,7 @@ CircularFixedSizeQueue::CircularFixedSizeQueue(size_t block_size, size_t block_c
     try {
         buffer_.resize(block_size_ * block_count_);
     } catch (const std::bad_alloc& e) {
-        std::cerr << "Allocation failed: " << e.what() << std::endl;
+        std::cerr << "[LIBLSX] Allocation failed: " << e.what() << std::endl;
         block_size_ = block_count_ = current_size_ = head_ = tail_ = 0;
         buffer_.clear();
         throw;

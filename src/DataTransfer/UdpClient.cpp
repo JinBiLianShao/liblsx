@@ -14,13 +14,13 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
     if (inet_pton(AF_INET, ip.c_str(), &(serverAddr.sin_addr)) != 1) {
         std::lock_guard<std::mutex> lock(g_error_mutex);
-        std::cerr << "UdpClient::UdpClient: inet_pton failed for address " << ip << ". Error: " << WSAGetLastError() << std::endl;
+        std::cerr << "[LIBLSX] UdpClient::UdpClient: inet_pton failed for address " << ip << ". Error: " << WSAGetLastError() << std::endl;
     }
 #else
         if (inet_pton(AF_INET, ip.c_str(), &(serverAddr.sin_addr)) != 1)
         {
             std::lock_guard<std::mutex> lock(g_error_mutex);
-            std::cerr << "UdpClient::UdpClient: inet_pton failed for address " << ip << ". Error: " << strerror(errno)
+            std::cerr << "[LIBLSX] UdpClient::UdpClient: inet_pton failed for address " << ip << ". Error: " << strerror(errno)
                 << std::endl;
         }
 #endif
@@ -34,7 +34,7 @@ namespace LSX_LIB::DataTransfer
   sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sockfd == INVALID_SOCKET) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpClient::create: socket failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpClient::create: socket failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
 #else
@@ -42,7 +42,7 @@ namespace LSX_LIB::DataTransfer
         if (sockfd < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpClient::create: socket failed. Error: " << strerror(errno) << std::endl;
+            std::cerr << "[LIBLSX] UdpClient::create: socket failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
 #endif
@@ -60,7 +60,7 @@ namespace LSX_LIB::DataTransfer
         )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpClient::send: Socket not created or closed." << std::endl;
+            std::cerr << "[LIBLSX] UdpClient::send: Socket not created or closed." << std::endl;
             return false;
         }
 
@@ -73,7 +73,7 @@ namespace LSX_LIB::DataTransfer
         if (size > static_cast<size_t>(std::numeric_limits<int>::max()))
         {
             std::lock_guard<std::mutex> lock_err_large(g_error_mutex);
-            std::cerr << "UdpClient::send: Total data size exceeds maximum sendto chunk size." << std::endl;
+            std::cerr << "[LIBLSX] UdpClient::send: Total data size exceeds maximum sendto chunk size." << std::endl;
             return false; // 数据过大，需要更高级的分块发送逻辑
         }
         // intSize 预留：当前分块发送逻辑按 size_t 循环处理
@@ -97,13 +97,13 @@ namespace LSX_LIB::DataTransfer
       // 如果是非阻塞 socket，需要检查 WSAEWOULDBLOCK
       {
                 LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-        std::cerr << "UdpClient::send: sendto failed. Error: " << err << std::endl;
+        std::cerr << "[LIBLSX] UdpClient::send: sendto failed. Error: " << err << std::endl;
             }
 #else
                 // 如果是非阻塞 socket，需要检查 EAGAIN 或 EWOULDBLOCK
                 {
                     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-                    std::cerr << "UdpClient::send: sendto failed. Error: " << strerror(errno) << std::endl;
+                    std::cerr << "[LIBLSX] UdpClient::send: sendto failed. Error: " << strerror(errno) << std::endl;
                 }
 #endif
                 return false; // 发生错误
@@ -112,7 +112,7 @@ namespace LSX_LIB::DataTransfer
             {
                 // 请求发送但实际发送0字节，这对于 sendto 来说通常不应该发生，除非是非阻塞 socket 且发送缓冲区满
                 LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
-                std::cerr << "UdpClient::send: Warning - sendto wrote 0 bytes (" << sent << "/" << sendSize <<
+                std::cerr << "[LIBLSX] UdpClient::send: Warning - sendto wrote 0 bytes (" << sent << "/" << sendSize <<
                     "), check non-blocking mode or error." << std::endl;
                 // 这里可以选择重试或视为失败
                 return false; // 视为失败
@@ -134,7 +134,7 @@ namespace LSX_LIB::DataTransfer
         )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpClient::receive: Socket not created or closed." << std::endl;
+            std::cerr << "[LIBLSX] UdpClient::receive: Socket not created or closed." << std::endl;
             return -1; // 指示错误
         }
 
@@ -145,7 +145,7 @@ namespace LSX_LIB::DataTransfer
         if (intSize < 0 || static_cast<size_t>(intSize) != size)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
-            std::cerr << "UdpClient::receive: Buffer size too large for recvfrom chunk size." << std::endl;
+            std::cerr << "[LIBLSX] UdpClient::receive: Buffer size too large for recvfrom chunk size." << std::endl;
             return -1;
         }
 
@@ -170,7 +170,7 @@ namespace LSX_LIB::DataTransfer
         }
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-      std::cerr << "UdpClient::receive: recvfrom failed. Error: " << err << std::endl;
+      std::cerr << "[LIBLSX] UdpClient::receive: recvfrom failed. Error: " << err << std::endl;
         }
 #else
             // 处理超时/非阻塞情况
@@ -182,7 +182,7 @@ namespace LSX_LIB::DataTransfer
             }
             {
                 LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-                std::cerr << "UdpClient::receive: recvfrom failed. Error: " << strerror(errno) << std::endl;
+                std::cerr << "[LIBLSX] UdpClient::receive: recvfrom failed. Error: " << strerror(errno) << std::endl;
             }
 #endif
             return -1; // 指示错误
@@ -236,7 +236,7 @@ namespace LSX_LIB::DataTransfer
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpClient::setSendTimeout failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpClient::setSendTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
 #else
@@ -246,7 +246,7 @@ namespace LSX_LIB::DataTransfer
         if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpClient::setSendTimeout failed. Error: " << strerror(errno) << std::endl;
+            std::cerr << "[LIBLSX] UdpClient::setSendTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
 #endif
@@ -268,7 +268,7 @@ namespace LSX_LIB::DataTransfer
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpClient::setReceiveTimeout failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpClient::setReceiveTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
 #else
@@ -278,7 +278,7 @@ namespace LSX_LIB::DataTransfer
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpClient::setReceiveTimeout failed. Error: " << strerror(errno) << std::endl;
+            std::cerr << "[LIBLSX] UdpClient::setReceiveTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
 #endif

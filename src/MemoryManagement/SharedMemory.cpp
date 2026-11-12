@@ -40,11 +40,11 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state during creation
 
     if (size == 0) {
-        std::cerr << "SharedMemory: Create failed. Size must be greater than 0." << std::endl;
+        std::cerr << "[LIBLSX] SharedMemory: Create failed. Size must be greater than 0." << std::endl;
         return false;
     }
     if (IsAttached() || !key_name_.empty()) { // Check if already managing a segment (locked by lock_guard)
-         std::cerr << "SharedMemory: Create failed. Already managing a segment ('" << key_name_ << "'). Detach first." << std::endl;
+         std::cerr << "[LIBLSX] SharedMemory: Create failed. Already managing a segment ('" << key_name_ << "'). Detach first." << std::endl;
          return false;
     }
 
@@ -64,7 +64,7 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
         win_name); // Object name
 
     if (hMapFile_ == NULL) {
-        std::cerr << "SharedMemory [Win]: CreateFileMapping failed for '" << key_or_name << "' (" << GetLastError() << ")." << std::endl;
+        std::cerr << "[LIBLSX] SharedMemory [Win]: CreateFileMapping failed for '" << key_or_name << "' (" << GetLastError() << ")." << std::endl;
         key_name_ = ""; size_ = 0; // Reset state
         return false;
     }
@@ -87,7 +87,7 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
         0, 0, size);
 
     if (lpBaseAddress_ == NULL) {
-        std::cerr << "SharedMemory [Win]: MapViewOfFile failed (" << GetLastError() << ")." << std::endl;
+        std::cerr << "[LIBLSX] SharedMemory [Win]: MapViewOfFile failed (" << GetLastError() << ")." << std::endl;
         CloseHandle(hMapFile_); hMapFile_ = NULL;
         key_name_ = ""; size_ = 0; is_owner_ = false; // Reset state
         return false;
@@ -98,7 +98,7 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
 #else // POSIX specific implementation
     shm_key_ = ftok(key_or_name.c_str(), 'R');
     if (shm_key_ == -1) {
-        std::cerr << "SharedMemory [POSIX]: ftok failed for '" << key_or_name << "' (" << errno << ": " << strerror(errno) << ")." << std::endl;
+        std::cerr << "[LIBLSX] SharedMemory [POSIX]: ftok failed for '" << key_or_name << "' (" << errno << ": " << strerror(errno) << ")." << std::endl;
         key_name_ = ""; size_ = 0; // Reset state
         return false;
     }
@@ -110,9 +110,9 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
     if (shm_id_ == -1) {
          if (errno == EEXIST) {
              // Creation failed because it exists. Fail the 'Create' call as per its purpose.
-             std::cerr << "SharedMemory [POSIX]: Failed to create segment with key " << shm_key_ << " because it already exists." << std::endl;
+             std::cerr << "[LIBLSX] SharedMemory [POSIX]: Failed to create segment with key " << shm_key_ << " because it already exists." << std::endl;
          } else {
-            std::cerr << "SharedMemory [POSIX]: Failed to create segment (" << errno << ": " << strerror(errno) << ")." << std::endl;
+            std::cerr << "[LIBLSX] SharedMemory [POSIX]: Failed to create segment (" << errno << ": " << strerror(errno) << ")." << std::endl;
          }
          shm_key_ = -1; key_name_ = ""; size_ = 0; // Reset state
          return false; // Creation failed
@@ -125,7 +125,7 @@ bool SharedMemory::Create(const std::string& key_or_name, size_t size) {
     // Attach the shared memory segment
     shm_address_ = shmat(shm_id_, nullptr, 0); // Attach anywhere with default flags
     if (shm_address_ == (void*)-1) {
-        std::cerr << "SharedMemory [POSIX]: Failed to attach segment ID " << shm_id_ << " (" << errno << ": " << strerror(errno) << ")." << std::endl;
+        std::cerr << "[LIBLSX] SharedMemory [POSIX]: Failed to attach segment ID " << shm_id_ << " (" << errno << ": " << strerror(errno) << ")." << std::endl;
         // If we created it, clean up the segment ID as we couldn't attach
         shmctl(shm_id_, IPC_RMID, nullptr); // Mark for deletion
         shm_id_ = -1; shm_address_ = nullptr; shm_key_ = -1; key_name_ = ""; size_ = 0; is_owner_ = false; // Reset state
@@ -142,11 +142,11 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
      LSX_LIB::LockManager::LockGuard<std::mutex> lock(mutex_); // Protect instance state
 
      if (size == 0) {
-         std::cerr << "SharedMemory: Open failed. Size must be greater than 0." << std::endl;
+         std::cerr << "[LIBLSX] SharedMemory: Open failed. Size must be greater than 0." << std::endl;
          return false;
      }
       if (IsAttached() || !key_name_.empty()) { // Check if already managing a segment (locked by lock_guard)
-         std::cerr << "SharedMemory: Open failed. Already managing a segment ('" << key_name_ << "'). Detach first." << std::endl;
+         std::cerr << "[LIBLSX] SharedMemory: Open failed. Already managing a segment ('" << key_name_ << "'). Detach first." << std::endl;
          return false;
       }
 
@@ -162,7 +162,7 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
         win_name); // Object name
 
      if (hMapFile_ == NULL) {
-         std::cerr << "SharedMemory [Win]: OpenFileMapping failed for '" << key_or_name << "' (" << GetLastError() << ")." << std::endl;
+         std::cerr << "[LIBLSX] SharedMemory [Win]: OpenFileMapping failed for '" << key_or_name << "' (" << GetLastError() << ")." << std::endl;
          key_name_ = ""; size_ = 0; // Reset state
          return false;
      }
@@ -175,7 +175,7 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
         0, 0, size); // Specify size (can be less than total mapping size)
 
      if (lpBaseAddress_ == NULL) {
-         std::cerr << "SharedMemory [Win]: MapViewOfFile failed during open (" << GetLastError() << ")." << std::endl;
+         std::cerr << "[LIBLSX] SharedMemory [Win]: MapViewOfFile failed during open (" << GetLastError() << ")." << std::endl;
          CloseHandle(hMapFile_); hMapFile_ = NULL;
          key_name_ = ""; size_ = 0; // Reset state
          return false;
@@ -186,7 +186,7 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
 #else // POSIX specific: Opening an existing segment
      shm_key_ = ftok(key_or_name.c_str(), 'R');
      if (shm_key_ == -1) {
-         std::cerr << "SharedMemory [POSIX]: ftok failed for opening '" << key_or_name << "' (" << errno << ": " << strerror(errno) << ")." << std::endl;
+         std::cerr << "[LIBLSX] SharedMemory [POSIX]: ftok failed for opening '" << key_or_name << "' (" << errno << ": " << strerror(errno) << ")." << std::endl;
          key_name_ = ""; size_ = 0; // Reset state
          return false;
      }
@@ -196,7 +196,7 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
      shm_id_ = shmget(shm_key_, 0, 0); // Size 0 and flags 0 to just get the ID
 
      if (shm_id_ == -1) {
-          std::cerr << "SharedMemory [POSIX]: Failed to get segment ID for key " << shm_key_ << " (" << errno << ": " << strerror(errno) << "). Segment might not exist or permissions are wrong." << std::endl;
+          std::cerr << "[LIBLSX] SharedMemory [POSIX]: Failed to get segment ID for key " << shm_key_ << " (" << errno << ": " << strerror(errno) << "). Segment might not exist or permissions are wrong." << std::endl;
           shm_key_ = -1; key_name_ = ""; size_ = 0; // Reset state
           return false;
      }
@@ -206,7 +206,7 @@ bool SharedMemory::Open(const std::string& key_or_name, size_t size) {
      // Attach the shared memory segment
      shm_address_ = shmat(shm_id_, nullptr, 0);
      if (shm_address_ == (void*)-1) {
-         std::cerr << "SharedMemory [POSIX]: Failed to attach segment ID " << shm_id_ << " during open (" << errno << ": " << strerror(errno) << ")." << std::endl;
+         std::cerr << "[LIBLSX] SharedMemory [POSIX]: Failed to attach segment ID " << shm_id_ << " during open (" << errno << ": " << strerror(errno) << ")." << std::endl;
          shm_id_ = -1; shm_address_ = nullptr; shm_key_ = -1; key_name_ = ""; size_ = 0; // Reset state
          return false;
      }
@@ -226,7 +226,7 @@ void SharedMemory::Detach() {// Protect instance state
 #ifdef _WIN32
     if (lpBaseAddress_ != nullptr) {
         if (!UnmapViewOfFile(lpBaseAddress_)) {
-             std::cerr << "SharedMemory [Win]: Failed to detach view of file (" << GetLastError() << ")." << std::endl;
+             std::cerr << "[LIBLSX] SharedMemory [Win]: Failed to detach view of file (" << GetLastError() << ")." << std::endl;
         } else {
             // std::cout << "SharedMemory [Win]: Detached view of file." << std::endl; // Use logging
         }
@@ -236,7 +236,7 @@ void SharedMemory::Detach() {// Protect instance state
          // On Windows, closing the handle decrement's the reference count.
          // The object is destroyed when the count reaches zero and all views are unmapped.
          if (!CloseHandle(hMapFile_)) {
-             std::cerr << "SharedMemory [Win]: Failed to close file mapping handle (" << GetLastError() << ")." << std::endl;
+             std::cerr << "[LIBLSX] SharedMemory [Win]: Failed to close file mapping handle (" << GetLastError() << ")." << std::endl;
          } else {
              // std::cout << "SharedMemory [Win]: Closed file mapping handle." << std::endl; // Use logging
          }
@@ -245,7 +245,7 @@ void SharedMemory::Detach() {// Protect instance state
 #else // POSIX
     if (shm_address_ != nullptr && shm_address_ != (void*)-1) {
         if (shmdt(shm_address_) == -1) {
-            std::cerr << "SharedMemory [POSIX]: Failed to detach segment (" << errno << ": " << strerror(errno) << ")." << std::endl;
+            std::cerr << "[LIBLSX] SharedMemory [POSIX]: Failed to detach segment (" << errno << ": " << strerror(errno) << ")." << std::endl;
         } else {
             // std::cout << "SharedMemory [POSIX]: Detached segment." << std::endl; // Use logging
         }
@@ -286,7 +286,7 @@ bool SharedMemory::Destroy() {
         return true;
     } else {
         // This state suggests detach failed or wasn't called correctly before destroy
-        std::cerr << "SharedMemory [Win]: Destroy called but handle/view still active? (Internal logic error)" << std::endl;
+        std::cerr << "[LIBLSX] SharedMemory [Win]: Destroy called but handle/view still active? (Internal logic error)" << std::endl;
         return false;
     }
 #else // POSIX
@@ -294,7 +294,7 @@ bool SharedMemory::Destroy() {
         // shmctl with IPC_RMID marks the segment for deletion.
         // The segment is actually removed when the last process detaches.
         if (shmctl(shm_id_, IPC_RMID, nullptr) == -1) {
-            std::cerr << "SharedMemory [POSIX]: Failed to destroy segment ID " << shm_id_ << " (" << errno << ": " << strerror(errno) << ")." << std::endl;
+            std::cerr << "[LIBLSX] SharedMemory [POSIX]: Failed to destroy segment ID " << shm_id_ << " (" << errno << ": " << strerror(errno) << ")." << std::endl;
             return false;
         } else {
             // std::cout << "SharedMemory [POSIX]: Marked segment ID " << shm_id_ << " for destruction." << std::endl; // Use logging

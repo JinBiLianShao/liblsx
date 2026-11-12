@@ -15,13 +15,13 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
     if (inet_pton(AF_INET, mcastIp.c_str(), &(groupAddr.sin_addr)) != 1) {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
-        std::cerr << "UdpMulticast::UdpMulticast: inet_pton failed for address " << mcastIp << ". Error: " << WSAGetLastError() << std::endl;
+        std::cerr << "[LIBLSX] UdpMulticast::UdpMulticast: inet_pton failed for address " << mcastIp << ". Error: " << WSAGetLastError() << std::endl;
     }
 #else
         if (inet_pton(AF_INET, mcastIp.c_str(), &(groupAddr.sin_addr)) != 1)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
-            std::cerr << "UdpMulticast::UdpMulticast: inet_pton failed for address " << mcastIp << ". Error: " <<
+            std::cerr << "[LIBLSX] UdpMulticast::UdpMulticast: inet_pton failed for address " << mcastIp << ". Error: " <<
                 strerror(errno) << std::endl;
         }
 #endif
@@ -35,7 +35,7 @@ namespace LSX_LIB::DataTransfer
   sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sockfd == INVALID_SOCKET) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpMulticast::create: socket failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpMulticast::create: socket failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
 #else
@@ -43,7 +43,7 @@ namespace LSX_LIB::DataTransfer
         if (sockfd < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::create: socket failed. Error: " << strerror(errno) << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::create: socket failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
 #endif
@@ -54,10 +54,10 @@ namespace LSX_LIB::DataTransfer
         {
 #ifdef _WIN32
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpMulticast::create: setsockopt(SO_REUSEADDR) failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpMulticast::create: setsockopt(SO_REUSEADDR) failed. Error: " << WSAGetLastError() << std::endl;
 #else
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::create: setsockopt(SO_REUSEADDR) failed. Error: " << strerror(errno) <<
+            std::cerr << "[LIBLSX] UdpMulticast::create: setsockopt(SO_REUSEADDR) failed. Error: " << strerror(errno) <<
                 std::endl;
 #endif
             // 不是关键错误，但报告
@@ -72,7 +72,7 @@ namespace LSX_LIB::DataTransfer
 
   if (bind(sockfd, reinterpret_cast<struct sockaddr*>(&localBindAddr), sizeof(localBindAddr)) < 0) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpMulticast::create: bind failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpMulticast::create: bind failed. Error: " << WSAGetLastError() << std::endl;
     close(); // 清理资源 (close 已加锁)
     return false;
   }
@@ -87,7 +87,7 @@ namespace LSX_LIB::DataTransfer
         if (bind(sockfd, reinterpret_cast<struct sockaddr*>(&localBindAddr), sizeof(localBindAddr)) < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::create: bind failed. Error: " << strerror(errno) << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::create: bind failed. Error: " << strerror(errno) << std::endl;
             close(); // 清理资源 (close 已加锁)
             return false;
         }
@@ -102,7 +102,7 @@ namespace LSX_LIB::DataTransfer
   if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
     reinterpret_cast<const char*>(&mreq), sizeof(mreq)) == SOCKET_ERROR) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpMulticast::create: setsockopt(IP_ADD_MEMBERSHIP) failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpMulticast::create: setsockopt(IP_ADD_MEMBERSHIP) failed. Error: " << WSAGetLastError() << std::endl;
     close(); // 清理资源 (close 已加锁)
     return false;
   }
@@ -114,7 +114,7 @@ namespace LSX_LIB::DataTransfer
                        &mreq, sizeof(mreq)) < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::create: setsockopt(IP_ADD_MEMBERSHIP) failed. Error: " << strerror(errno) <<
+            std::cerr << "[LIBLSX] UdpMulticast::create: setsockopt(IP_ADD_MEMBERSHIP) failed. Error: " << strerror(errno) <<
                 std::endl;
             close(); // 清理资源 (close 已加锁)
             return false;
@@ -135,7 +135,7 @@ namespace LSX_LIB::DataTransfer
         )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::send: Socket not created or closed." << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::send: Socket not created or closed." << std::endl;
             return false;
         }
 
@@ -144,7 +144,7 @@ namespace LSX_LIB::DataTransfer
         if (intSize < 0 || static_cast<size_t>(intSize) != size)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
-            std::cerr << "UdpMulticast::send: Data size too large for sendto." << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::send: Data size too large for sendto." << std::endl;
             return false;
         }
 
@@ -161,10 +161,10 @@ namespace LSX_LIB::DataTransfer
             {
 #ifdef _WIN32
       LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-      std::cerr << "UdpMulticast::send: sendto failed. Error: " << WSAGetLastError() << std::endl;
+      std::cerr << "[LIBLSX] UdpMulticast::send: sendto failed. Error: " << WSAGetLastError() << std::endl;
 #else
                 LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-                std::cerr << "UdpMulticast::send: sendto failed. Error: " << strerror(errno) << std::endl;
+                std::cerr << "[LIBLSX] UdpMulticast::send: sendto failed. Error: " << strerror(errno) << std::endl;
 #endif
                 return false;
             }
@@ -172,7 +172,7 @@ namespace LSX_LIB::DataTransfer
             {
                 // 请求发送但实际发送0字节，这对于 sendto 来说通常不应该发生，除非是非阻塞 socket 且发送缓冲区满
                 LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
-                std::cerr << "UdpMulticast::send: Warning - sendto wrote 0 bytes (" << sent << "/" << intSize <<
+                std::cerr << "[LIBLSX] UdpMulticast::send: Warning - sendto wrote 0 bytes (" << sent << "/" << intSize <<
                     "), check non-blocking mode or error." << std::endl;
                 return false; // 视为失败
             }
@@ -193,7 +193,7 @@ namespace LSX_LIB::DataTransfer
         )
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::receive: Socket not created or closed." << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::receive: Socket not created or closed." << std::endl;
             return -1; // 指示错误
         }
 
@@ -202,7 +202,7 @@ namespace LSX_LIB::DataTransfer
         if (intSize < 0 || static_cast<size_t>(intSize) != size)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
-            std::cerr << "UdpMulticast::receive: Buffer size too large for recvfrom chunk size." << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::receive: Buffer size too large for recvfrom chunk size." << std::endl;
             return -1;
         }
 
@@ -227,7 +227,7 @@ namespace LSX_LIB::DataTransfer
         }
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-      std::cerr << "UdpMulticast::receive: recvfrom failed. Error: " << err << std::endl;
+      std::cerr << "[LIBLSX] UdpMulticast::receive: recvfrom failed. Error: " << err << std::endl;
         }
 #else
             // 处理超时/非阻塞情况
@@ -239,7 +239,7 @@ namespace LSX_LIB::DataTransfer
             }
             {
                 LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-                std::cerr << "UdpMulticast::receive: recvfrom failed. Error: " << strerror(errno) << std::endl;
+                std::cerr << "[LIBLSX] UdpMulticast::receive: recvfrom failed. Error: " << strerror(errno) << std::endl;
             }
 #endif
             return -1; // 指示错误
@@ -303,7 +303,7 @@ namespace LSX_LIB::DataTransfer
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpMulticast::setSendTimeout failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpMulticast::setSendTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
 #else
@@ -313,7 +313,7 @@ namespace LSX_LIB::DataTransfer
         if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::setSendTimeout failed. Error: " << strerror(errno) << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::setSendTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
 #endif
@@ -335,7 +335,7 @@ namespace LSX_LIB::DataTransfer
   DWORD timeout = timeout_ms;
   if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) == SOCKET_ERROR) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-    std::cerr << "UdpMulticast::setReceiveTimeout failed. Error: " << WSAGetLastError() << std::endl;
+    std::cerr << "[LIBLSX] UdpMulticast::setReceiveTimeout failed. Error: " << WSAGetLastError() << std::endl;
     return false;
   }
 #else
@@ -345,7 +345,7 @@ namespace LSX_LIB::DataTransfer
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpMulticast::setReceiveTimeout failed. Error: " << strerror(errno) << std::endl;
+            std::cerr << "[LIBLSX] UdpMulticast::setReceiveTimeout failed. Error: " << strerror(errno) << std::endl;
             return false;
         }
 #endif

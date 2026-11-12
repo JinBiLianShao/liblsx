@@ -30,10 +30,10 @@ namespace LSX_LIB::Thread
                 }
                 catch (const std::exception& e)
                 {
-                    std::cerr << "Scheduled task execution failed: " << e.what() << std::endl;
+                    std::cerr << "[LIBLSX] Scheduled task execution failed: " << e.what() << std::endl;
                 } catch (...)
                 {
-                    std::cerr << "Scheduled task execution failed with unknown error." << std::endl;
+                    std::cerr << "[LIBLSX] Scheduled task execution failed with unknown error." << std::endl;
                 }
             }
             // 任务执行完毕（或被停止），可以在 Scheduler 中清理
@@ -85,11 +85,11 @@ namespace LSX_LIB::Thread
                 }
                 catch (const std::exception& e)
                 {
-                    std::cerr << "Periodic task execution failed: " << e.what() << std::endl;
+                    std::cerr << "[LIBLSX] Periodic task execution failed: " << e.what() << std::endl;
                     // 周期任务失败是否停止取决于需求，这里选择继续
                 } catch (...)
                 {
-                    std::cerr << "Periodic task execution failed with unknown error." << std::endl;
+                    std::cerr << "[LIBLSX] Periodic task execution failed with unknown error." << std::endl;
                     // 选择继续
                 }
 

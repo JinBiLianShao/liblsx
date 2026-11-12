@@ -44,10 +44,10 @@ namespace LSX_LIB::DataTransfer
         {
 #ifdef _WIN32
                 LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-                std::cerr << "UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << WSAGetLastError() << std::endl;
+                std::cerr << "[LIBLSX] UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << WSAGetLastError() << std::endl;
 #else
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
-            std::cerr << "UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << strerror(errno) <<
+            std::cerr << "[LIBLSX] UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << strerror(errno) <<
                 std::endl;
 #endif
             close(); // 清理套接字 (close 方法已加锁)

@@ -21,7 +21,7 @@ Buffer::Buffer(size_t size) {
             data_vector_.resize(size);
             // std::cout << "Buffer: Allocated buffer of size " << size << std::endl; // Use logging
         } catch (const std::bad_alloc& e) {
-             std::cerr << "Buffer: Failed to allocate buffer of size " << size << ": " << e.what() << std::endl;
+             std::cerr << "[LIBLSX] Buffer: Failed to allocate buffer of size " << size << ": " << e.what() << std::endl;
              // data_vector_ will be empty - safe state
              throw; // Re-throw
         }
@@ -37,7 +37,7 @@ bool Buffer::Resize(size_t new_size) {
         // std::cout << "Buffer: Resized buffer to " << new_size << std::endl; // Use logging
         return true;
     } catch (const std::bad_alloc& e) {
-        std::cerr << "Buffer: Failed to resize buffer to " << new_size << ": " << e.what() << std::endl;
+        std::cerr << "[LIBLSX] Buffer: Failed to resize buffer to " << new_size << ": " << e.what() << std::endl;
         return false;
     }
 }
