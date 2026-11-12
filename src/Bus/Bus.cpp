@@ -5,6 +5,7 @@
 #include "Bus/Bus.h"
 
 #include <cerrno>
+#include <limits>
 #include <cstring>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -282,7 +283,10 @@ int SpiBus::speedHz() const
     if (injected_) return static_cast<int>(speed_hz_);
     if (fd_ < 0) return -1;
     std::uint32_t h = 0;
-    return ::ioctl(fd_, SPI_IOC_RD_MAX_SPEED_HZ, &h) >= 0 ? static_cast<int>(h) : -1;
+    if (::ioctl(fd_, SPI_IOC_RD_MAX_SPEED_HZ, &h) < 0) return -1;
+    // uint32 -> int 直接转换在 > INT_MAX Hz 时会变成负数，饱和到 INT_MAX
+    return h > static_cast<std::uint32_t>(std::numeric_limits<int>::max())
+               ? std::numeric_limits<int>::max() : static_cast<int>(h);
 }
 
 Result::Result<std::vector<std::uint8_t>> SpiBus::transfer(

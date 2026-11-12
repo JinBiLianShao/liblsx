@@ -265,6 +265,11 @@ namespace LSX_LIB
              * 用于保护 UdpMulticast 对象的成员变量和对底层 socket 句柄的访问，确保线程安全。
              */
             std::mutex mtx; // 用于保护成员变量和socket操作的互斥锁
+            bool addr_valid_ = true;  // 构造时 inet_pton 是否成功；create() 据此拒绝非法地址
+
+            /// 不加锁的关闭实现：供 create() 错误路径（已持有 mtx）调用，
+            /// 避免 std::mutex 重入死锁。调用方必须已持有 mtx。
+            void closeUnlocked();
         };
     } // namespace DataTransfer
 } // namespace LSX_LIB

@@ -14,12 +14,14 @@ namespace LSX_LIB::DataTransfer
 #ifdef _WIN32
     if (inet_pton(AF_INET, ip.c_str(), &(serverAddr.sin_addr)) != 1) {
         std::lock_guard<std::mutex> lock(g_error_mutex);
+        addr_valid_ = false;
         std::cerr << "[LIBLSX] UdpClient::UdpClient: inet_pton failed for address " << ip << ". Error: " << WSAGetLastError() << std::endl;
     }
 #else
         if (inet_pton(AF_INET, ip.c_str(), &(serverAddr.sin_addr)) != 1)
         {
             std::lock_guard<std::mutex> lock(g_error_mutex);
+            addr_valid_ = false;
             std::cerr << "[LIBLSX] UdpClient::UdpClient: inet_pton failed for address " << ip << ". Error: " << strerror(errno)
                 << std::endl;
         }
@@ -28,7 +30,13 @@ namespace LSX_LIB::DataTransfer
 
     bool UdpClient::create()
     {
-        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx);
+        if (!addr_valid_)
+        {
+            std::lock_guard<std::mutex> lock_err(g_error_mutex);
+            std::cerr << "[LIBLSX] UdpClient::create: invalid target address (inet_pton failed in ctor)" << std::endl;
+            return false;
+        } // 锁定互斥锁
 
 #ifdef _WIN32
   sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -194,12 +202,17 @@ namespace LSX_LIB::DataTransfer
     void UdpClient::close()
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        closeUnlocked();
+    }
 
-        if (sockfd >= 0
+    void UdpClient::closeUnlocked()
+    {
+        // 调用方已持有 mtx（close() 或 create() 错误路径），此处不可再加锁。
 #ifdef _WIN32
-    || sockfd != INVALID_SOCKET
+        if (sockfd != INVALID_SOCKET)
+#else
+        if (sockfd >= 0)
 #endif
-        )
         {
 #ifdef _WIN32
     closesocket(sockfd);
@@ -209,10 +222,6 @@ namespace LSX_LIB::DataTransfer
             sockfd = -1; // 设置句柄为无效状态
 #endif
             // WSACleanup 由 WinsockManager 处理
-            // {
-            //     std::lock_guard<std::mutex> lock_out(g_error_mutex); // 锁定输出
-            //     std::cout << "UdpClient: Socket closed." << std::endl;
-            // }
         }
     }
 

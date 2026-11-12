@@ -50,7 +50,7 @@ namespace LSX_LIB::DataTransfer
             std::cerr << "[LIBLSX] UdpBroadcast::create: setsockopt(SO_BROADCAST) failed. Error: " << strerror(errno) <<
                 std::endl;
 #endif
-            close(); // 清理套接字 (close 方法已加锁)
+            closeUnlocked(); // 已持有 mtx，走继承的 protected 不加锁实现
             return false;
         }
         return true;

@@ -58,7 +58,10 @@ void ConfigStore::ensureSection(const std::string& section)
 
 OpResult ConfigStore::loadFromString(const std::string& content)
 {
-    std::unique_lock<std::shared_mutex> lk(mtx_);
+    // 先解析到临时结构：任何一行出错都直接返回，旧配置完全不受影响（原子加载）。
+    std::map<std::string, std::string> parsed_values;
+    std::map<std::string, std::string> parsed_section_of_key;
+    std::vector<std::string> new_sections;
     std::istringstream in(content);
     std::string line, current_section;
     int lineno = 0;
@@ -74,7 +77,8 @@ OpResult ConfigStore::loadFromString(const std::string& content)
             current_section = trim(t.substr(1, t.size() - 2));
             if (current_section.empty())
                 return Result::Err("空节名，第 " + std::to_string(lineno) + " 行");
-            ensureSection(current_section);
+            if (std::find(new_sections.begin(), new_sections.end(), current_section) == new_sections.end())
+                new_sections.push_back(current_section);
             continue;
         }
 
@@ -101,18 +105,29 @@ OpResult ConfigStore::loadFromString(const std::string& content)
         if (comment != std::string::npos) val = trim(val.substr(0, comment));
 
         const auto k = makeKey(current_section, key);
-        std::string old = values_.count(k) ? values_[k] : std::string{};
-        values_[k] = val;
-        section_of_key_[k] = current_section;
-        // loadFromString 期间不触发单个键的回调，最后统一通知绑定（见文件末尾）
-        (void)old;
+        parsed_values[k] = val;
+        parsed_section_of_key[k] = current_section;
     }
-    // 同步全部绑定变量
-    for (const auto& [k, fn] : bindings_)
+
+    // 锁内一次性提交；同时收集需要同步的绑定（回调绝不在锁内执行）。
+    std::vector<std::pair<std::function<void(const std::string&)>, std::string>> pending_bindings;
     {
-        auto it = values_.find(k);
-        if (it != values_.end()) fn(it->second);
-    }
+        std::unique_lock<std::shared_mutex> lk(mtx_);
+        for (const auto& sec : new_sections) ensureSection(sec);
+        for (const auto& [k, v] : parsed_values)
+        {
+            values_[k] = v;
+            section_of_key_[k] = parsed_section_of_key.at(k);
+        }
+        for (const auto& [k, fn] : bindings_)
+        {
+            auto it = values_.find(k);
+            if (it != values_.end()) pending_bindings.emplace_back(fn, it->second);
+        }
+    }   // mtx_ 在此释放
+
+    // 绑定变量同步在锁外执行（写外部全局指针，无重入风险）。
+    for (auto& [fn, v] : pending_bindings) if (fn) fn(v);
     return OpResult();
 }
 

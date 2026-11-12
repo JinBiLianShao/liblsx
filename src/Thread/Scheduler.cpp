@@ -128,21 +128,17 @@ namespace LSX_LIB::Thread
 
     void Scheduler::shutdown()
     {
-        // 锁定 tasks_ 向量，防止在停止时有新任务被添加
-        std::lock_guard<std::mutex> lk(tasks_mtx_);
-
-        // 遍历所有任务，请求停止并join (对于可join的线程)
-        // 对于分离的线程，stop() 只是设置标志，join 会失败或无操作
-        for (auto& tw : tasks_)
+        // 锁内只把任务列表搬出来；stop()/join() 必须在锁外执行——
+        // 周期任务回调里若调 scheduleOnce/Periodic（要拿 tasks_mtx_）会与持锁
+        // join 形成死锁；持锁等待线程结束也会阻塞新任务提交。
+        std::vector<std::shared_ptr<ThreadWrapper>> tasks;
         {
-            // 检查智能指针是否有效
-            if (tw)
-            {
-                tw->stop(); // 请求线程停止并等待其join完成 (如果可join)
-            }
+            std::lock_guard<std::mutex> lk(tasks_mtx_);
+            tasks.swap(tasks_);
         }
-
-        // 清空任务列表
-        tasks_.clear();
+        for (auto& tw : tasks)
+        {
+            if (tw) tw->stop();   // 无锁状态下等待线程结束
+        }
     }
 }

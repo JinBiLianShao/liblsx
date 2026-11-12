@@ -20,7 +20,7 @@ LIBLSX 是一个面向 **嵌入式 Linux** 的轻量级、自包含 C++17 通用
 - **统一通信接口**：通过 `ICommunication` 抽象 UDP/TCP/串口等通信协议。
 - **多协议支持**：
   - **网络协议**：UDP（客户端/服务器/广播/多播）、TCP（客户端/服务器）。
-  - **串口通信**：跨平台串口读写，支持超时配置。
+  - **串口通信**：跨平台串口读写（POSIX 下读超时由固定 VTIME=1 提供；setSendTimeout/setReceiveTimeout 为预留接口，当前不映射毫秒超时，见 SerialPort.cpp 注释）。
 - **线程安全设计**：内置锁机制保障多线程安全，RAII 管理资源。
 - **工厂模式创建实例**：通过 `CommunicationFactory` 快速创建各类通信实例。
 
@@ -483,8 +483,6 @@ make install   # 头文件按模块装入 <prefix>/include/lsx/，库装入 <pre
 
 ### v0.7.0（2026-11-11）—— 通用状态机模块 + 文档体系完善
 - **文档体系完善**：README 开头更新为 17 模块全貌与嵌入式 Linux 定位；模块文档表修复断裂（合并为一张 17 行连续表）、补齐 StateMachine；测试章节从"53 用例/五大模块"更新为 257 用例完整覆盖清单；新增 **[tests/README.md](tests/README.md)** 测试套件使用说明（框架、编写规范、运行方式、扩展方法、常见问题）；修正许可证链接指向错误的 google 搜索。
-- **新增 StateMachine 模块**：StateMachine<State, Event, Context> 完全泛型 FSM（header-only），运行时扩展转换表、通配 ANY、层次状态（父子继承/子覆盖）、守卫与动作、自转换 UML 语义、超时转换（tick 主循环驱动 + 可选 TimerWheel 适配器）、转换历史/DOT 导出/观察钩子、重入 dispatch 排队、recursive_mutex 线程安全。
-- **新增 21 个深度测试**（总计 257），覆盖枚举/字符串/整数三种状态类型、守卫拒绝、通配优先级、层次回退、超时重排、重入排队、并发 4x100、DOT 导出、TimerWheel 集成；三轮稳定全过，三平台零警告交叉编译。
 - **新增 StateMachine 模块**：StateMachine<State, Event, Context> 完全泛型 FSM（header-only），运行时扩展转换表、通配 ANY、层次状态（父子继承/子覆盖）、守卫与动作、自转换 UML 语义、超时转换（tick 主循环驱动 + 可选 TimerWheel 适配器）、转换历史/DOT 导出/观察钩子、重入 dispatch 排队、recursive_mutex 线程安全。
 - **新增 21 个深度测试**（总计 257），覆盖枚举/字符串/整数三种状态类型、守卫拒绝、通配优先级、层次回退、超时重排、重入排队、并发 4x100、DOT 导出、TimerWheel 集成；三轮稳定全过，三平台零警告交叉编译。
 

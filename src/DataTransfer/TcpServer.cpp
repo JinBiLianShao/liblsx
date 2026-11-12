@@ -325,11 +325,11 @@ namespace LSX_LIB::DataTransfer
     // 对外仍走 closeClientConnection()，那里加锁后转发到这里
     void TcpServer::closeClientConnectionUnlocked()
     {
-        if (connFd >= 0
 #ifdef _WIN32
-        || connFd != INVALID_SOCKET
+        if (connFd != INVALID_SOCKET)
+#else
+        if (connFd >= 0)
 #endif
-        )
         {
 #ifdef _WIN32
         // 先关闭发送和接收 (可选，但好的实践)
@@ -361,11 +361,11 @@ namespace LSX_LIB::DataTransfer
 
         closeClientConnectionUnlocked(); // 本方法已持有 mtx，直接走不加锁内部实现
 
-        if (listenFd >= 0
 #ifdef _WIN32
-        || listenFd != INVALID_SOCKET
+        if (listenFd != INVALID_SOCKET)
+#else
+        if (listenFd >= 0)
 #endif
-        )
         {
 #ifdef _WIN32
         closesocket(listenFd);

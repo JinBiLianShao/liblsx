@@ -36,6 +36,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <limits>
 #include <cstring>
 #include <string>
 #include <utility>
@@ -359,6 +360,9 @@ public:
     std::string readString()
     {
         std::uint64_t len = readVarint();
+        // arm32 上 size_t 为 32 位：先判断 64 位长度是否可无损转换，
+        // 否则 0x1_0000_0000 会截断成 0 并绕过 check() 越界检查。
+        if (len > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) { err_ = ReadError::LengthOverflow; return {}; }
         if (fail() || !check(static_cast<std::size_t>(len))) return {};
         std::string s(reinterpret_cast<const char*>(data_ + pos_),
                       static_cast<std::size_t>(len));
@@ -370,8 +374,9 @@ public:
     std::vector<std::uint8_t> readBytes()
     {
         std::uint64_t len = readVarint();
+        if (len > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) { err_ = ReadError::LengthOverflow; return {}; }
         if (fail() || !check(static_cast<std::size_t>(len))) return {};
-        std::vector<std::uint8_t> v(data_ + pos_, data_ + pos_ + len);
+        std::vector<std::uint8_t> v(data_ + pos_, data_ + pos_ + static_cast<std::size_t>(len));
         pos_ += static_cast<std::size_t>(len);
         return v;
     }

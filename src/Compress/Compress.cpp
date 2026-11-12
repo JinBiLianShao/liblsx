@@ -43,6 +43,9 @@ std::vector<std::uint8_t> inflate(const std::uint8_t* data, std::size_t len,
 {
     if (len == 0) return {};
     std::size_t cap = expected_size > 0 ? expected_size : std::max<std::size_t>(len * 4, 1024);
+    // expected_size 超过上限时不静默截断成"半成品"：直接让后续扩容逻辑
+    // 在达到 kMaxInflate 时明确返回失败，避免误把截断数据当完整解压结果。
+    if (expected_size > kMaxInflate) return {};
     cap = std::min(cap, kMaxInflate);
     std::vector<std::uint8_t> out(cap);
     mz_stream s{};
@@ -154,10 +157,31 @@ std::vector<std::uint8_t> gzipCompress(const std::vector<std::uint8_t>& data, Le
 std::vector<std::uint8_t> gzipDecompress(const std::vector<std::uint8_t>& data)
 {
     if (data.size() < 18) return {};
-    // 跳过 10 字节头（不支持额外字段/文件名/注释等可选头）
     if (data[0] != 0x1F || data[1] != 0x8B || data[2] != 8) return {};
-    if (data[3] & 0x04) return {};   // FEXTRA 不支持
-    auto body = inflate(data.data() + 10, data.size() - 18);
+    const std::uint8_t flg = data[3];
+    // 按 RFC 1952 跳过全部可选头字段（FEXTRA / FNAME / FCOMMENT / FHCRC），
+    // 否则带文件名的标准 gzip（gzip 命令默认带 FNAME）会解压错位或失败。
+    std::size_t hdr = 10;
+    if (flg & 0x04)  // FEXTRA: 2 字节长度 + 变长数据
+    {
+        if (hdr + 2 > data.size()) return {};
+        std::size_t xlen = static_cast<std::size_t>(data[hdr]) |
+                           (static_cast<std::size_t>(data[hdr + 1]) << 8);
+        hdr += 2 + xlen;
+    }
+    if (flg & 0x08)  // FNAME: 以 0 结尾的字符串
+    {
+        while (hdr < data.size() && data[hdr] != 0) ++hdr;
+        ++hdr;
+    }
+    if (flg & 0x10)  // FCOMMENT: 以 0 结尾的字符串
+    {
+        while (hdr < data.size() && data[hdr] != 0) ++hdr;
+        ++hdr;
+    }
+    if (flg & 0x02) hdr += 2;  // FHCRC: 2 字节头 CRC
+    if (hdr + 8 > data.size()) return {};  // 至少留出 8 字节尾部
+    auto body = inflate(data.data() + hdr, data.size() - hdr - 8);
     if (body.empty()) return {};
     // 尾部 CRC32 与 ISIZE 校验
     std::uint32_t crc = 0, isize = 0;
@@ -194,6 +218,9 @@ std::vector<std::uint8_t> rleDecode(const std::uint8_t* data, std::size_t len)
     for (std::size_t i = 0; i < len; i += 2)
     {
         if (data[i+1] == 0) return {};   // count=0 非法
+        // 恶意输入（每对 count=255）可致 127.5 倍内存放大且无上限，
+        // 用与 inflate 一致的 kMaxInflate 上限约束输出，超出即判失败。
+        if (static_cast<std::size_t>(data[i+1]) > kMaxInflate - out.size()) return {};
         out.insert(out.end(), data[i+1], data[i]);
     }
     return out;

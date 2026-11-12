@@ -324,7 +324,10 @@ namespace LSX_LIB {
                 if (IsEmptyUnlocked()) {   // 已持锁，走不加锁检查（IsEmpty 会重入死锁）
                     return std::nullopt;
                 }
-                return std::optional<T>(std::move(data_vector_[head_]));
+                // Peek 是"查看不移除"：必须拷贝而非 move。
+                // 旧实现用 std::move 会掏空队首元素（std::string/vector 内容被搬走），
+                // 而 head_/current_size_ 不变，队首变成被破坏的对象留在队列里。
+                return std::optional<T>(data_vector_[head_]);
             }
 
 

@@ -26,7 +26,7 @@ FileWriter::FileWriter(const std::string& filepath, int max_lines)
 
 FileWriter::~FileWriter() {
     if (file_stream_.is_open()) {
-        RotateLogs(); // 确保退出前将缓冲区剩余内容写入
+        file_stream_.flush();
         file_stream_.close();
     }
 }
@@ -45,29 +45,29 @@ void FileWriter::OpenFile() {
 
 void FileWriter::Write(const std::string& text) {
     if (!file_stream_.is_open()) {
-        // 尝试重新打开文件，如果之前打开失败
         OpenFile();
         if (!file_stream_.is_open()) {
             std::cerr << "[LIBLSX] Error: Log file " << filepath_ << " is not open. Cannot write log." << std::endl;
-            return; // 无法写入，直接返回
+            return;
         }
     }
 
     line_buffer_.push_back(text);
 
-    // 当缓冲区大小超过最大行数时，移除最旧的行
-    while (line_buffer_.size() > static_cast<size_t>(max_lines_)) {
+    // 仅在缓冲区刚超过上限时才重写整个文件（丢弃最旧一行）；
+    // 未超限的行直接追加写入，避免旧实现每写一行都 trunc + 重写全部的 O(n^2) 磁盘 I/O。
+    if (line_buffer_.size() > static_cast<size_t>(max_lines_)) {
         line_buffer_.pop_front();
+        RotateLogs();
+        return;
     }
-    
-    // 将日志实际写入文件（此处简化为每次都重写，符合循环缓冲区的描述）
-    // RotateLogs 负责将 line_buffer_ 的内容刷新到文件，并确保文件只包含这些行。
-    RotateLogs();
+    file_stream_ << text << '\n';
+    file_stream_.flush();
 }
 
 void FileWriter::Flush() {
+    // 行已在 Write 时即时写入，这里只需刷新缓冲，不再截断重写整个文件。
     if (file_stream_.is_open()) {
-        RotateLogs(); // 确保缓冲区内容写入
         file_stream_.flush();
     }
 }
@@ -92,6 +92,9 @@ void FileWriter::RotateLogs() {
         file_stream_ << line << '\n'; // 使用 '\n' 而非 std::endl 以避免不必要的刷新
     }
     file_stream_.flush(); // 在写入所有缓冲行后手动刷新
+    // 轮转结束后切回追加模式，后续 Write 直接追加而不会覆写已有行
+    file_stream_.close();
+    file_stream_.open(filepath_, std::ios::out | std::ios::app);
 }
 
 } // namespace Logger

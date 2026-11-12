@@ -224,6 +224,8 @@ std::vector<std::uint8_t> base64Decode(const std::string& text)
         if (c == '/') return 63;
         return -1;
     };
+    // 末组不足 4 字符时直接判为非法，避免 i+1..i+3 越界读
+    if (text2.size() % 4 != 0) return {};
     for (std::size_t i = 0; i < text2.size(); i += 4)
     {
         int a = val(text2[i]), b = val(text2[i+1]);
@@ -271,9 +273,16 @@ std::vector<std::uint8_t> hexDecode(const std::string& text)
 bool constantTimeEquals(const std::uint8_t* a, std::size_t an,
                         const std::uint8_t* b, std::size_t bn)
 {
-    if (an != bn) return false;
-    volatile std::uint8_t diff = 0;
-    for (std::size_t i = 0; i < an; ++i) diff |= static_cast<std::uint8_t>(a[i] ^ b[i]);
+    // 旧实现长度不同就提前 return，长度差异本身成为时序侧信道。
+    // 改为固定遍历 max(an,bn) 次，把长度差也累积进 diff（volatile 防优化）。
+    volatile std::uint8_t diff = static_cast<std::uint8_t>((an ^ bn) & 0xFF);
+    const std::size_t n = an > bn ? an : bn;
+    for (std::size_t i = 0; i < n; ++i)
+    {
+        std::uint8_t x = i < an ? a[i] : 0;
+        std::uint8_t y = i < bn ? b[i] : 0;
+        diff |= static_cast<std::uint8_t>(x ^ y);
+    }
     return diff == 0;
 }
 

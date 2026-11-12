@@ -50,6 +50,9 @@ bool sendAll(int fd, const std::uint8_t* data, std::size_t size)
             if (errno == EINTR) continue;
             return false;
         }
+        // send 返回 0（对端关闭/缓冲满且非阻塞）时不得视为进展，
+        // 否则 sent 不前进会形成死循环。
+        if (n == 0) return false;
         sent += static_cast<std::size_t>(n);
     }
     return true;

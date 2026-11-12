@@ -225,6 +225,12 @@ public:
             return TransitionResult::Busy;   // 事件已入队，由外层泵处理
 
         pumping_ = true;
+        // 用户 guard/action/onEntry/onExit 抛异常时也要复位 pumping_，
+        // 否则之后所有 dispatch 永远返回 Busy，状态机永久卡死。
+        struct PumpGuard {
+            bool* flag;
+            ~PumpGuard() { *flag = false; }
+        } pump_guard{&pumping_};
         TransitionResult result = TransitionResult::NoTransition;
         while (!queue_.empty())
         {
@@ -232,7 +238,6 @@ public:
             queue_.pop_front();
             result = processOne(cur);
         }
-        pumping_ = false;
         return result;
     }
 
@@ -242,14 +247,21 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lk(mtx_);
         time_ms_ = now_ms;
-        if (active_timeout_.armed && now_ms >= active_timeout_.due_ms)
+        // 同一状态可注册多个超时：逐个触发所有到期项，
+        // 旧实现只保留第一个匹配的超时，其余静默丢失。
+        std::size_t fired = 0;
+        for (auto it = active_timeouts_.begin(); it != active_timeouts_.end(); )
         {
-            Event e = active_timeout_.event;
-            active_timeout_.armed = false;
-            dispatch(e);
-            return 1;
+            if (now_ms >= it->due_ms)
+            {
+                Event e = it->event;
+                it = active_timeouts_.erase(it);
+                dispatch(e);
+                ++fired;
+            }
+            else ++it;
         }
-        return 0;
+        return fired;
     }
 
     // ---- 查询 ----
@@ -274,7 +286,9 @@ public:
         std::lock_guard<std::recursive_mutex> lk(mtx_);
         return history_.size();
     }
-    const std::deque<HistoryT>& history() const
+    /// 返回历史快照（值拷贝）：旧实现返回锁外引用，调用方在无锁下访问
+    /// 与并发写形成数据竞争，与类声明的线程安全矛盾。
+    std::deque<HistoryT> history() const
     {
         std::lock_guard<std::recursive_mutex> lk(mtx_);
         return history_;
@@ -304,8 +318,11 @@ public:
         auto addNode = [&](const State& s) {
             for (const auto& x : seen) if (equal(x, s)) return;
             seen.push_back(s);
+            // 修复：旧实现把 shape 嵌进 label 并多出一个 ]，
+            // 输出 "S42" [label="Running" [shape=doublecircle]] —— Graphviz 无法解析。
+            // 正确写法是同一属性列表内并列 label 与 shape。
             out << "  \"S" << keyOf(s) << "\" [label=\"" << nameOf(s)
-                << (equal(s, current_) ? "\" [shape=doublecircle]" : "\"") << "];\n";
+                << "\"" << (equal(s, current_) ? ", shape=doublecircle" : "") << "];\n";
         };
         addNode(current_);
         for (const auto& [k, node] : nodes_) { (void)k; addNode(node.id); }
@@ -347,7 +364,6 @@ private:
     };
     struct ActiveTimeout
     {
-        bool armed = false;
         std::int64_t due_ms = 0;
         Event event{};
     };
@@ -442,15 +458,15 @@ private:
 
     void armTimeoutsForCurrent()
     {
-        active_timeout_.armed = false;
+        active_timeouts_.clear();
         for (const auto& td : timeouts_)
         {
             if (equal(td.from, current_))
             {
-                active_timeout_.armed = true;
-                active_timeout_.due_ms = time_ms_ + td.ms;
-                active_timeout_.event = td.event;
-                return;
+                ActiveTimeout at;
+                at.due_ms = time_ms_ + td.ms;
+                at.event = td.event;
+                active_timeouts_.push_back(at);
             }
         }
     }
@@ -492,7 +508,7 @@ private:
     std::unordered_map<State, StateNodeT, StateHash> nodes_;
     std::vector<TransitionT> transitions_;
     std::vector<TimeoutDef> timeouts_;
-    ActiveTimeout active_timeout_;
+    std::vector<ActiveTimeout> active_timeouts_;
     std::vector<Observer> observers_;
     std::deque<HistoryT> history_;
     std::size_t history_limit_ = 64;

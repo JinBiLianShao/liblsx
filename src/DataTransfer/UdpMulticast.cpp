@@ -14,12 +14,14 @@ namespace LSX_LIB::DataTransfer
         // 使用 inet_pton
 #ifdef _WIN32
     if (inet_pton(AF_INET, mcastIp.c_str(), &(groupAddr.sin_addr)) != 1) {
+        addr_valid_ = false;
         LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
         std::cerr << "[LIBLSX] UdpMulticast::UdpMulticast: inet_pton failed for address " << mcastIp << ". Error: " << WSAGetLastError() << std::endl;
     }
 #else
         if (inet_pton(AF_INET, mcastIp.c_str(), &(groupAddr.sin_addr)) != 1)
         {
+            addr_valid_ = false;
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex);
             std::cerr << "[LIBLSX] UdpMulticast::UdpMulticast: inet_pton failed for address " << mcastIp << ". Error: " <<
                 strerror(errno) << std::endl;
@@ -29,7 +31,13 @@ namespace LSX_LIB::DataTransfer
 
     bool UdpMulticast::create()
     {
-        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx);
+        if (!addr_valid_)
+        {
+            std::lock_guard<std::mutex> lock_err(g_error_mutex);
+            std::cerr << "[LIBLSX] UdpMulticast::create: invalid multicast address (inet_pton failed in ctor)" << std::endl;
+            return false;
+        } // 锁定互斥锁
 
 #ifdef _WIN32
   sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -73,7 +81,7 @@ namespace LSX_LIB::DataTransfer
   if (bind(sockfd, reinterpret_cast<struct sockaddr*>(&localBindAddr), sizeof(localBindAddr)) < 0) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "[LIBLSX] UdpMulticast::create: bind failed. Error: " << WSAGetLastError() << std::endl;
-    close(); // 清理资源 (close 已加锁)
+    closeUnlocked(); // 已持有 mtx，走不加锁内部实现
     return false;
   }
 #else
@@ -88,7 +96,7 @@ namespace LSX_LIB::DataTransfer
         {
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] UdpMulticast::create: bind failed. Error: " << strerror(errno) << std::endl;
-            close(); // 清理资源 (close 已加锁)
+            closeUnlocked(); // 已持有 mtx，走不加锁内部实现
             return false;
         }
 #endif
@@ -103,7 +111,7 @@ namespace LSX_LIB::DataTransfer
     reinterpret_cast<const char*>(&mreq), sizeof(mreq)) == SOCKET_ERROR) {
     LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
     std::cerr << "[LIBLSX] UdpMulticast::create: setsockopt(IP_ADD_MEMBERSHIP) failed. Error: " << WSAGetLastError() << std::endl;
-    close(); // 清理资源 (close 已加锁)
+    closeUnlocked(); // 已持有 mtx，走不加锁内部实现
     return false;
   }
 #else
@@ -116,7 +124,7 @@ namespace LSX_LIB::DataTransfer
             LSX_LIB::LockManager::LockGuard<std::mutex> lock_err(g_error_mutex); // 锁定错误输出
             std::cerr << "[LIBLSX] UdpMulticast::create: setsockopt(IP_ADD_MEMBERSHIP) failed. Error: " << strerror(errno) <<
                 std::endl;
-            close(); // 清理资源 (close 已加锁)
+            closeUnlocked(); // 已持有 mtx，走不加锁内部实现
             return false;
         }
 #endif
@@ -251,13 +259,19 @@ namespace LSX_LIB::DataTransfer
     void UdpMulticast::close()
     {
         LSX_LIB::LockManager::LockGuard<std::mutex> lock(mtx); // 锁定互斥锁
+        closeUnlocked();
+    }
+
+    void UdpMulticast::closeUnlocked()
+    {
+        // 调用方已持有 mtx（close() 或 create() 错误路径），此处不可再加锁。
 
         // 在关闭套接字前离开多播组 (可选，但好的实践)
-        if (sockfd >= 0
 #ifdef _WIN32
-    || sockfd != INVALID_SOCKET
+        if (sockfd != INVALID_SOCKET)
+#else
+        if (sockfd >= 0)
 #endif
-        )
         {
 #ifdef _WIN32
     struct ip_mreq mreq;
@@ -281,6 +295,7 @@ namespace LSX_LIB::DataTransfer
             //     std::cout << "UdpMulticast: Socket closed." << std::endl;
             // }
         }
+
     }
 
     UdpMulticast::~UdpMulticast()
