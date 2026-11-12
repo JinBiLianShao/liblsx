@@ -162,6 +162,13 @@ if (ENABLE_TESTS)
     add_subdirectory(tests)
 endif ()
 
+# ===================== 模块使用示例（可选） =====================
+# 每个模块一个带详细注释的可运行示例，见 examples/README.md
+option(BUILD_EXAMPLES "Build module usage examples" OFF)
+if (BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif ()
+
 # ===================== 构建信息汇总 =====================
 list(LENGTH SRC_FILES SRC_COUNT)
 message(STATUS "")

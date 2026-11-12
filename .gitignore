@@ -8,3 +8,7 @@ build/
 .idea/
 .vscode/
 cmake-build-*/
+
+# 示例集构建产物
+examples/bin/
+examples/liblsx.a

@@ -388,6 +388,9 @@ auto g = LSX_LIB::Compress::gzipCompress(payload);      // 带 CRC32 校验
 
 ## 模块文档
 
+> 每个模块还提供一个**可编译、可运行、带详细注释**的示例程序，见 [examples/](examples/) 目录
+> （一键构建：`cd examples && ./build_all.sh`，或顶层 `cmake -DBUILD_EXAMPLES=ON`）。
+
 | 模块          | 功能说明                              | 详细文档链接                                                                       |
 |---------------|---------------------------------------|------------------------------------------------------------------------------|
 | **Thread** | 线程管理与任务调度                    | [Thread 模块文档](https://github.com/JinBiLianShao/liblsx/blob/master/example%2FThread%2FLIBLSX%20%E5%B7%A5%E5%85%B7%E5%BA%93%20Thread%20%E6%A8%A1%E5%9D%97%20%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E6%96%87%E6%A1%A3.md) |

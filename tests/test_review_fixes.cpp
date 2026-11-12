@@ -18,6 +18,8 @@
 #include "Compress/Compress.h"
 #include "Config/ConfigStore.h"
 #include "DataTransfer/UdpMulticast.h"
+#include "EventBus/EventBus.h"
+#include "Serialize/Serialize.h"
 
 using namespace LSX_LIB;
 
@@ -174,4 +176,80 @@ LSX_TEST(ReviewFix, TickFiresAllDueTimeoutsOnSelfTransition) {
     LSX_EXPECT_EQ(fired, static_cast<std::size_t>(2));
     LSX_EXPECT_EQ(ctx.n, 1);
     LSX_EXPECT_TRUE(fsm.currentState() == S::Running);
+}
+
+// ---------------------------------------------------------------------------
+// 以下为第二轮审查补充的边界用例（带注释说明每条验证的契约）
+// ---------------------------------------------------------------------------
+
+// #补充1：ConfigStore 变更回调只在值真正变化时触发。
+// 契约：set 相同值时 changed=false，不应触发 onChange 回调（避免无谓的重载通知）。
+LSX_TEST(ReviewFix, ConfigStoreCallbackOnlyOnChange) {
+    Config::ConfigStore s;
+    int fired = 0;
+    s.onChange([&fired](const Config::ChangeEvent&) { ++fired; });
+    s.set("s", "k", std::string("a"));
+    LSX_EXPECT_EQ(fired, 1);           // 首次设置：触发
+    s.set("s", "k", std::string("a"));
+    LSX_EXPECT_EQ(fired, 1);           // 相同值：不再触发
+    s.set("s", "k", std::string("b"));
+    LSX_EXPECT_EQ(fired, 2);           // 变化：触发
+}
+
+// #补充2：EventBus 订阅句柄拷贝共享同一份退订状态。
+// 契约：拷贝出的句柄与原件等效；任一句柄析构即退订，且只退订一次（幂等）。
+LSX_TEST(ReviewFix, EventBusSubscriptionCopySharesState) {
+    EventBus::EventBus bus;
+    int received = 0;
+    auto sub = bus.subscribe<int>([&received](const int&) { ++received; });
+    {
+        EventBus::Subscription copy = sub;   // 拷贝句柄
+        bus.publish(1);
+        LSX_EXPECT_EQ(received, 1);
+    }   // copy 析构 -> 自动退订（共享 state_）
+    bus.publish(2);
+    LSX_EXPECT_EQ(received, 1);        // 已退订，不再收到
+}
+
+// #补充3：CircularQueue 满后取出再放入，索引正确回绕（循环复用）。
+// 契约：循环队列的 head/tail 以 capacity_ 取模回绕，容量不因多次满/空变化。
+LSX_TEST(ReviewFix, CircularQueueWrapsAround) {
+    Memory::CircularQueue<int> q(3);
+    for (int round = 0; round < 10; ++round) {
+        for (int i = 0; i < 3; ++i) LSX_EXPECT_TRUE(q.Enqueue(i));
+        LSX_EXPECT_TRUE(!q.Enqueue(99));       // 第 4 个满 -> 拒绝
+        for (int i = 0; i < 3; ++i) {
+            auto v = q.Dequeue();
+            LSX_EXPECT_TRUE(v.has_value());
+            LSX_EXPECT_EQ(v.value(), i);       // 顺序正确
+        }
+        LSX_EXPECT_TRUE(!q.Dequeue().has_value());  // 空 -> nullopt
+    }
+}
+
+// #补充4：Serialize 读取未知 TLV wire type 时置 BadWireType 而非越界。
+// 契约：wire type 3/4/6/7 未定义，应置 fail 并返回空字段，不触碰缓冲区。
+LSX_TEST(ReviewFix, SerializeRejectsUnknownWireType) {
+    Serialize::BinaryWriter w;
+    // 手工构造：key = (tag=1)<<3 | wire_type=3  （3 是未定义 wire type）
+    w.writeVarint(static_cast<std::uint64_t>((1u << 3) | 3u));
+    Serialize::BinaryReader r(w.data().data(), w.size());
+    auto f = r.readField();
+    LSX_EXPECT_TRUE(r.fail());
+    LSX_EXPECT_EQ(static_cast<int>(r.error()), static_cast<int>(Serialize::ReadError::BadWireType));
+    (void)f;
+}
+
+// #补充5：Compress 的空输入在各接口统一返回空，不崩溃。
+// 契约：空数据压缩/解压应返回空 vector（防御不可信输入的长度为 0 的边界）。
+LSX_TEST(ReviewFix, CompressEmptyInputSafe) {
+    std::vector<std::uint8_t> empty;
+    LSX_EXPECT_TRUE(Compress::deflate(empty).empty());
+    LSX_EXPECT_TRUE(Compress::zlibCompress(empty).empty());
+    LSX_EXPECT_TRUE(Compress::gzipCompress(empty).empty());
+    LSX_EXPECT_TRUE(Compress::rleEncode(empty).empty());
+    LSX_EXPECT_TRUE(Compress::inflate(empty).empty());
+    LSX_EXPECT_TRUE(Compress::zlibDecompress(empty).empty());
+    LSX_EXPECT_TRUE(Compress::gzipDecompress(empty).empty());
+    LSX_EXPECT_TRUE(Compress::rleDecode(empty).empty());
 }
